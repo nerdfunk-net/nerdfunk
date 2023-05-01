@@ -1,0 +1,215 @@
+---
+nautobot:
+    url: http://127.0.0.1:8080
+    user: username
+    password: password
+    token: __TOKEN__
+    hldm: >
+        query ($name: [String], $id: [String], $tag: [String]) {
+          devices(name: $name, id: $id, tag: $tag) {
+            hostname: name
+            serial
+            primary_ip4 {
+              address
+            }
+            config_context
+            tags {
+              name
+              slug
+            }
+            device_role {
+              name
+            }
+            platform {
+              name
+              slug
+              manufacturer {
+                name
+              }
+              napalm_driver
+            }
+            site {
+              name
+              slug
+            }
+            interfaces {
+              name
+              description
+              enabled
+              mac_address
+              type
+              mode
+              ip_addresses {
+                address
+                role
+                tags {
+                  slug
+                  name
+                }
+              }
+              connected_circuit_termination {
+                circuit {
+                  cid
+                  commit_rate
+                  provider {
+                    name
+                  }
+                }
+              }
+              tagged_vlans {
+                name
+                vid
+              }
+              untagged_vlan {
+                name
+                vid
+              }
+              cable {
+                termination_a_type
+                status {
+                  name
+                }
+                color
+              }
+              tags {
+                slug
+                name
+              }
+              lag {
+                name
+                enabled
+              }
+              member_interfaces {
+                name
+              }
+            }
+          }
+        }
+
+    device_properties: >
+        query ($name:[String], $site:[String], $role:[String], $tag:[String]) {
+          devices(name: $name, site: $site, role: $role, tag: $tag) {
+            hostname: name
+            site {
+              name
+              slug
+            }
+            tags {
+              name
+              slug
+            }
+            device_role {
+              name
+            }
+            primary_ip4 {
+              address
+            }
+            platform {
+              name
+              slug
+            }
+          }
+        }
+
+    device_properties_by_cidr: >
+        query ($cidr: String) {
+          ip_addresses(parent: $cidr) {
+            primary_ip4_for {
+              hostname: name
+              primary_ip4 {
+                address
+              }
+              platform {
+                name
+                slug
+              }
+              site {
+                name
+                slug
+              }
+              tags {
+                slug
+                name
+              }
+              device_role {
+                slug
+                name
+              }
+            }
+          }
+        }
+
+    prefixe: >
+        query ($prefix: String) {
+          prefixes (within_include: $prefix) {
+              prefix
+              description
+              site {
+                name
+                slug
+              }
+              tags {
+                slug
+                name
+              }
+          }
+        }
+
+git:
+    # please config your GIT here
+    sot_data:
+        username: your@email
+        token: "your_git_token"
+        repo: "https://github.com/your_repo/sot_data.git"
+        local_gitdir: "/path/to/sot_data"
+        local_content: "/"
+    config_contexts:
+        username: your@email
+        token: "your_git_token"
+        repo: "https://github.com/your_repo/config_contexts.git"
+        local_gitdir: "/path/to/sot_data"
+        local_content: "config_contexts"
+    config_backup:
+        username: your@email
+        token: "your_git_token"
+        repo: "https://github.com/your_repo/config_backup.git"
+        local_gitdir: "/path/to/sot_data"
+        local_content: "config_backups"
+
+phpipam:
+  phpipam_url: http://127.0.0.1/
+  phpipam_port: 80
+  phpipam_appid: phpipam
+  phpipam_username: phpipam
+  phpipam_password: phpipamphpipam
+  # set $api_allow_unsafe = true; in config.php to disable SSL
+  phpipam_ssl_verify: false
+
+templates:
+    directory: "../sot_data/templates/"
+    trim_blocks: True
+
+authentication:
+    apikey: myapikey
+
+inventory:
+    backup_configs: "../sot_data/config_backups"
+
+webhooks:
+    dcim.device:
+        create:
+            routing_key: device.create
+        update:
+            routing_key: device.update
+        delete:
+            routing_key: device.delete
+
+# default logins to connect to the devices
+# these accounts are not stored in nautobot
+accounts:
+    devices:
+        # profile name
+        default:
+            username:  username
+            # encrypted and base64 encodes password
+            password: __PASSWORD__
