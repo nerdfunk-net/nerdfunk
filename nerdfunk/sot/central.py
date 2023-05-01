@@ -20,7 +20,7 @@ class Central(object):
         if self._nautobot is None:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
-    def get_entity(self, calling_function, title, message, getter, last_run=[]):
+    def get_entity(self, calling_function, title, message, getter):
 
         entity = None
         message = dict(message)
@@ -40,17 +40,15 @@ class Central(object):
             entity = calling_function.get(**getter)
             if entity is None:
                 logging.debug(f'{title} not found in sot')
-                last_run.append(not_found)
                 return None
         except Exception as exc:
             logging.error(f'could not get entity; got exception {exc}')
             got_exception.update({'exception': exc})
-            last_run.append(got_exception)
             return None
 
         return entity
 
-    def update_entity(self, getter_function, properties, title, message, getter, last_run=[]):
+    def update_entity(self, getter_function, properties, title, message, getter):
         """
         getter_function: used to get the updates entity
         properties: the new properties of the entity
@@ -85,36 +83,29 @@ class Central(object):
             entity = getter_function.get(**getter)
             if entity is None:
                 logging.debug(f'{title} not found in sot')
-                last_run.append(not_found)
                 return None
         except Exception as exc:
             logging.error(f'could not get entity; got exception {exc}')
             got_exception.update({'exception': exc})
-            last_run.append(got_exception)
             return None
 
         try:
             success, response = self.get_ids(properties)
             if not success:
                 logging.error("could not convert items to IDs")
-                last_run.append(update_not_successfull)
                 return None
 
             success = entity.update(properties)
             if success:
                 logging.debug("%s updated in sot" % title)
-                last_run.append(update_successfull)
             else:
                 logging.debug("%s not updated in sot" % title)
-                last_run.append(update_not_successfull)
             return entity
         except Exception as exc:
             logging.error("%s not updated in sot; got exception %s" % (title, exc))
-            got_exception.update({'exception': exc})
-            last_run.append(got_exception)
             return None
 
-    def add_entity(self, calling_function, properties, title, message, getter, return_device = True, last_run=[]):
+    def add_entity(self, calling_function, properties, title, message, getter, return_device = True):
         logging.debug(f'add_entity called')
         message = dict(message)
         already_in_sot = dict(message)
@@ -146,7 +137,6 @@ class Central(object):
             entity = calling_function.get(**getter)
             if entity is not None:
                 logging.debug(f'{title} already in sot')
-                last_run.append(already_in_sot)
                 if return_device:
                     return entity
                 else:
@@ -156,24 +146,20 @@ class Central(object):
             success, response = self.get_ids(properties)
             if not success:
                 logging.error("could not convert items to IDs")
-                last_run.append(addition_not_successfull)
                 return None
 
             item = calling_function.create(properties)
             if item:
                 logging.debug("%s added to sot" % title)
-                last_run.append(addition_successfull)
             else:
                 logging.debug("%s not added to sot" % title)
-                last_run.append(addition_not_successfull)
             return item
         except Exception as exc:
             logging.error("%s not added to sot; got exception %s" % (title, exc))
             got_exception.update({'exception': exc})
-            last_run.append(got_exception)
             return None
 
-    def delete_entity(self, calling_function, title, message, getter, last_run=[]):
+    def delete_entity(self, calling_function, title, message, getter):
         message = dict(message)
         not_found = dict(message)
         not_found.update({'job': 'delete %s' % title,
@@ -203,12 +189,9 @@ class Central(object):
             entity = calling_function.get(**getter)
             if entity is None:
                 logging.debug(f'{title} not found in sot')
-                last_run.append(not_found)
                 return None
         except Exception as exc:
             logging.error(f'could not get entity; got exception {exc}')
-            got_exception.update({'exception': exc})
-            last_run.append(got_exception)
             return None
 
         # delete it
@@ -216,16 +199,13 @@ class Central(object):
             success = entity.delete()
             if success:
                 logging.debug("%s deleted from sot" % title)
-                last_run.append(deletetion_successfull)
             else:
                 logging.debug("%s not deleted from sot" % title)
-                last_run.append(deletetion_not_successfull)
             return entity
         except Exception as exc:
             logging.error("%s not deleted from sot; got exception %s" %
                         (title, exc))
             got_exception.update({'exception': exc})
-            last_run.append(got_exception)
             return None
 
         # -----===== general methods =====-----

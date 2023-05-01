@@ -10,7 +10,6 @@ class Interface(object):
     _last_attribute = None
     _device = None
     _todos = {}
-    _last_run = []
     _use_defaults = False
     _return_interface = True
 
@@ -106,8 +105,7 @@ class Interface(object):
             tag = self._sot.central.get_entity(self._nautobot.extras.tags,
                                      "Tag",
                                      {'name': new_tag},
-                                     {'name': new_tag},
-                                     self._last_run)
+                                     {'name': new_tag})
             if tag is None:
                 logging.error(f'unknown tag {new_tag}')
                 new_tags.remove(new_tag)
@@ -120,8 +118,7 @@ class Interface(object):
                                      properties,
                                      'Tags',
                                      properties,
-                                     getter,
-                                     self._last_run)
+                                     getter)
 
     # -----===== attributes =====-----
 
@@ -152,10 +149,6 @@ class Interface(object):
 
         if nb_interface is not None:
             logging.info("interface %s already exists" % self._interface_name)
-            self._last_run.append({'job': 'add interface',
-                                   'device': self._device.name,
-                                   'success': False,
-                                   'log': 'interface already in sot'})
             if self._return_interface:
                 return nb_interface
             else:
@@ -166,11 +159,6 @@ class Interface(object):
             success, error = self._sot.central.get_ids(interface)
             if not success:
                 logging.error(f'could not convert properties to IDs; {error}')
-                self._last_run.append({'job': 'add interface',
-                                       'device': self._device.name,
-                                       'interface': self._interface_name,
-                                       'success': False,
-                                       'log': 'could not convert properties to IDs; %s' % error})
                 return False
 
             # try:
@@ -178,20 +166,6 @@ class Interface(object):
             logging.debug(interface)
             nb_interface = self._nautobot.dcim.interfaces.create(interface)
             self._interface_obj = nb_interface
-            self._last_run.append({'job': 'add interface',
-                                       'device': self._device.name,
-                                       'interface': self._interface_name,
-                                       'success': True,
-                                       'log': 'interface %s added to sot' % self._interface_name})
             logging.debug("added new interface %s/%s" % (self._device.name, self._interface_name))
             return nb_interface
-            # except Exception as exc:
-            #     logging.error("could not add new interface %s/%s; got exception %s" % (
-            #                    self._device.name,
-            #                    self._interface_name,
-            #                    exc))
-            #     self._last_run.append({'job': 'add interface',
-            #                            'interface': interface['name'],
-            #                            'success': False,
-            #                            'log': 'error: got exception %s' % exc})
-            #     return None
+

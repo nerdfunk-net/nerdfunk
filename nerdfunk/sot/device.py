@@ -14,7 +14,6 @@ class Device(object):
     _last_attribute = None
     _sot = None
     _todos = {}
-    _last_run = []
     _use_defaults = False
     _return_device = True
 
@@ -66,8 +65,7 @@ class Device(object):
             self._device_obj = self._sot.central.get_entity(self._nautobot.dcim.devices, 
                                                   "Device", 
                                                   {'name': self._device_name},
-                                                  {'name': self._device_name},
-                                                  self._last_run)
+                                                  {'name': self._device_name})
         return self._device_obj
 
     def _get_interface(self, interface):
@@ -94,9 +92,6 @@ class Device(object):
         logging.debug(f'setting interface defaults to {defaults}')
         self._interface_defaults = defaults
         return self
-
-    def get_last_run(self):
-        return self._last_run
 
     def get(self):
         if self._last_request == "interface":
@@ -255,15 +250,13 @@ class Device(object):
         side_b = self._sot.central.get_entity(self._nautobot.dcim.devices,
                                               "Device",
                                               {'name': name_of_side_b},
-                                              {'name': name_of_side_b},
-                                              self._last_run)
+                                              {'name': name_of_side_b})
         interface_b = self._sot.central.get_entity(self._nautobot.dcim.interfaces,
                                               "Interface",
                                               {'device_id': side_b.id,
                                                'name': name_of_interface_b},
                                               {'device_id': side_b.id,
-                                               'name': name_of_interface_b},
-                                              self._last_run)
+                                               'name': name_of_interface_b})
         
         if side_b is not None and interface_b is not None:
             self._last_requested_interface = None
@@ -280,8 +273,7 @@ class Device(object):
                                                    "Cable",
                                                    cable,
                                                    None,
-                                                   False,
-                                                   self._last_run)
+                                                   False)
 
             if success:
                 logging.debug(f'connection created successfully')
@@ -372,8 +364,7 @@ class Device(object):
                                     "Device", 
                                     {'name': self._device_name},
                                     {'name': self._device_name},
-                                    self._return_device,
-                                    self._last_run)
+                                    self._return_device)
 
         # check if we have to add a primary interface
         if self._primary_interface:
@@ -387,11 +378,6 @@ class Device(object):
             if primary_interface is None:
                 logging.error("creating interface failed")
                 return nb_device
-
-            self._last_run.append({'job': 'add device',
-                                   'device': device_properties['name'],
-                                   'success': True,
-                                   'log': 'primary interface %s added to device' % self._primary_interface})
 
             if self._primary_ipv4 is None:
                 logging.debug("no primary ipv4 specified; skipping assignment of the interface")
@@ -410,25 +396,9 @@ class Device(object):
                     .assign(primary_interface) \
                     .on(nb_device) \
                     .to(self._primary_ipv4)
-                if assigned_interface:
-                    self._last_run.append({'job': 'add device',
-                                           'device': device_properties['name'],
-                                           'success': True,
-                                           'log': 'primary interface %s assigned to IP %s' % (
-                                                  self._primary_interface, self._primary_ipv4)})
-                else:
-                    self._last_run.append({'job': 'add device',
-                                           'device': device_properties['name'],
-                                           'success': False,
-                                           'log': 'could not assign interface %s to ip %s' % (
-                                                  self._primary_interface, self._primary_ipv4)})
             else:
                 logging.error("could not add ip address (%s); assigning interface to ipv4 not possible" %
                               self._primary_ipv4)
-                self._last_run.append({'job': 'add device',
-                                       'device': device_properties['name'],
-                                       'success': False,
-                                       'log': 'could not add ip address %s' % self._primary_ipv4})
 
             # make interface primary
             if self._make_interface_primary:
@@ -436,11 +406,6 @@ class Device(object):
                 success = nb_device.update({'primary_ip4': primary_ipv4.id})
                 if success is None:
                     logging.error("make interface primary failed")
-                    self._last_run.append({'job': 'assign ip address',
-                                   'device': self._device,
-                                   'interface': kwargs[0],
-                                   'success': False,
-                                   'log': 'could not mark interface as primary'})
                     return None
                 else:
                     logging.debug('successfully marked interface as primary')
@@ -453,10 +418,6 @@ class Device(object):
         nb_device = self._get_device_from_nautobot()
         if nb_device is None:
             logging.info("device %s does not exists" % self._device_name)
-            self._last_run.append({'job': 'update device',
-                                   'device': device_properties['name'],
-                                   'success': False,
-                                   'log': 'device does not exists in sot'})
             return None
 
         logging.debug("converting properties to IDs")
@@ -464,26 +425,14 @@ class Device(object):
         success, error = self._sot.central.get_ids(device_properties)
         if not success:
             logging.error(f'could not convert properties to IDs; {error}')
-            self._last_run.append({'job': 'update device',
-                                   'device': device_properties['name'],
-                                   'success': False,
-                                   'log': 'could not convert properties to IDs; {error}'})
             return None
 
         try:
             success = nb_device.update(device_properties)
             logging.debug('device %s updated successfully' % device_properties['name'])
-            self._last_run.append({'job': 'update device',
-                                   'device': device_properties['name'],
-                                   'success': True,
-                                   'log': 'device updated successfully'})
             return nb_device
         except Exception as exc:
             logging.error(f'could not add device to nautobot; got exception %s' % exc)
-            self._last_run.append({'job': 'update device',
-                                   'device': device_properties['name'],
-                                   'success': False,
-                                   'log': 'error got exception %s' % exc})
             return None
 
     def delete_device(self):
@@ -524,8 +473,7 @@ class Device(object):
                                      properties,
                                      'Tags',
                                      properties,
-                                     {'name': self._device_name},
-                                     self._last_run)
+                                     {'name': self._device_name})
 
     def delete_tags(self):
         self.open_nautobot()
@@ -552,5 +500,4 @@ class Device(object):
                                      'Tags',
                                      properties,
                                      {'name': self._device_name},
-                                     self._last_run,
                                      self._nautobot.dcim.devices)

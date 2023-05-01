@@ -13,7 +13,6 @@ class Ipam(object):
     _last_attribute = None
     _sot = None
     _todos = {}
-    _last_run = []
     _use_defaults = False
     _return_device = True
     _add_missing_ip = False
@@ -68,9 +67,6 @@ class Ipam(object):
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
     # -----===== user commands =====-----
-
-    def get_last_run(self):
-        return self._last_run
 
     def get(self):
         if self._last_request == "ipv4":
@@ -274,8 +270,7 @@ class Ipam(object):
                                   properties, 'IP',
                                   {'address': properties['address']},
                                   {'address': properties['address']},
-                                  self._return_device,
-                                  self._last_run)
+                                  self._return_device)
 
     def delete_ipv4(self):
         self.open_nautobot()
@@ -307,8 +302,7 @@ class Ipam(object):
                                      properties,
                                      'IP address',
                                      properties,
-                                     {'address': properties.get('address')},
-                                     self._last_run)
+                                     {'address': properties.get('address')})
 
     # -----===== PREFIX management =====-----
 
@@ -339,8 +333,7 @@ class Ipam(object):
                                   properties, 'prefix',
                                   {'prefix': properties['prefix']},
                                   {'prefix': properties['prefix']},
-                                  self._return_device,
-                                  self._last_run)
+                                  self._return_device)
 
     def delete_prefix(self):
         self.open_nautobot()
@@ -349,8 +342,7 @@ class Ipam(object):
         return self._sot.central.delete_entity(self._nautobot.ipam.prefixes,
                                      'prefix',
                                      {'prefix': properties['prefix']},
-                                     {'prefix': properties['prefix']},
-                                     self._last_run)
+                                     {'prefix': properties['prefix']})
 
     def update_prefix(self, properties):
         self.open_nautobot()
@@ -368,8 +360,7 @@ class Ipam(object):
                                      properties,
                                      'Prefix',
                                      properties,
-                                     {'prefix': properties.get('prefix')},
-                                     self._last_run)
+                                     {'prefix': properties.get('prefix')})
 
     # -----===== VLAN management =====-----
 
@@ -422,10 +413,6 @@ class Ipam(object):
 
             if vlan.vid == properties.get('vid') and site_name == properties.get('site'):
                 logging.debug(f'VLAN already in sot')
-                self._last_run.append({'job': 'add %s' % title,
-                               'success': False,
-                               'log': '%s already in sot' % title
-                               })
 
         message = {'vid': properties.get('vid'), 'site': properties.get('site')}
         return self._sot.central.add_entity(self._nautobot.ipam.vlans,
@@ -433,8 +420,7 @@ class Ipam(object):
                                   "VLAN",
                                   message,
                                   None,
-                                  self._return_device,
-                                  self._last_run)
+                                  self._return_device)
 
     def delete_vlan(self):
         self.open_nautobot()
@@ -463,8 +449,7 @@ class Ipam(object):
                 return self._sot.central.delete_entity(self._nautobot.ipam.vlans,
                                              'VLAN',
                                              vlan,
-                                             {'id': vlan.id},
-                                             self._last_run)
+                                             {'id': vlan.id})
 
         logging.debug("no VLAN found")
         return None
@@ -497,8 +482,7 @@ class Ipam(object):
                                              properties,
                                              'VLAN',
                                              properties,
-                                             {'id': vlan.id},
-                                             self._last_run)
+                                             {'id': vlan.id})
 
         logging.debug("no VLAN found")
         return None
@@ -539,11 +523,6 @@ class Ipam(object):
             else:
                 logging.error(
                     f'unknown IP address {ip_address} and _add_missing is False; assignment is not possible')
-                self._last_run.append({'job': 'assign ip address',
-                                   'device': self._device,
-                                   'interface': self._interface,
-                                   'success': False,
-                                   'log': 'could not assign ip; unknown IP address'})
                 return None
         logging.debug("got IP address %s" % nb_ipadd)
 
@@ -559,11 +538,6 @@ class Ipam(object):
         logging.debug("got device %s" % nb_device)
         if nb_device is None:
             logging.error("unknown device")
-            self._last_run.append({'job': 'assign ip address',
-                                   'device': self._device,
-                                   'interface': self._interface,
-                                   'success': False,
-                                   'log': 'could not assign ip; unknown device'})
             return None
 
         if isinstance(self._interface, Interfaces):
@@ -578,11 +552,6 @@ class Ipam(object):
 
         if nb_interface is None:
             logging.error("unknown interface")
-            self._last_run.append({'job': 'assign ip address',
-                                   'device': self._device,
-                                   'interface': ip_address,
-                                   'success': False,
-                                   'log': 'could not assign ip; unknown interface'})
             return None
 
         # now we have the address (kwargs[0]), the interface and the device
@@ -597,26 +566,11 @@ class Ipam(object):
 
             if nb_ipadd:
                 logging.debug("IP address assigned")
-                self._last_run.append({'job': 'assign ip address',
-                                       'device': self._device,
-                                       'interface': self._interface,
-                                       'success': True,
-                                       'log': 'IP address assigned to interface'})
             else:
                 logging.debug("no update needed")
-                self._last_run.append({'job': 'assign ip address',
-                                       'device': self._device,
-                                       'interface': self._interface,
-                                       'success': False,
-                                       'log': 'IP address already assigned to interface'})
                 return nb_ipadd
         except Exception as exc:
             logging.error("got exception %s" % exc)
-            self._last_run.append({'job': 'assign ip address',
-                                   'device': self._device,
-                                   'interface': self._interface,
-                                   'success': False,
-                                   'log': 'error: got exception %s' % exc})
             return None
 
         return True
