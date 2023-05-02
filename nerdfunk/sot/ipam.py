@@ -66,6 +66,24 @@ class Ipam(object):
         if self._nautobot is None:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
+    def __convert_arguments_to_properties(self, *unnamed, **named):
+        """ converts unnamed (dict) and named arguments to a single property dict """
+        logging.debug("-- entering importer.py/__convert_arguments_to_properties")
+        properties = {}
+        nn = len(unnamed)
+        for param in unnamed:
+            if isinstance(param, dict):
+                for key,value in param.items():
+                    properties[key] = value
+            elif isinstance(param, str):
+                return param
+            else:
+                logging.error(f'cannot use paramater {param} / {type(param)} as value')
+        for key,value in named.items():
+                properties[key] = value
+        
+        return properties
+
     # -----===== user commands =====-----
 
     def get(self):
@@ -77,13 +95,8 @@ class Ipam(object):
             return self.get_prefix()
 
     def add(self, *unnamed, **named):
-        logging.debug(f'-- entering ipam.py/add')
-        # unnamed args are always a list; we use the first item only; we aspect a dict here
-        # named args is a dict
-        properties = dict(named)
-        if unnamed:
-            properties.update(unnamed[0])
-
+        logging.debug("-- entering sot/ipam.py/add")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
         if self._last_request == "ipv4":
             return self.add_ipv4(properties)
         if self._last_request == "vlan":
@@ -92,12 +105,8 @@ class Ipam(object):
             return self.add_prefix(properties)
 
     def update(self, *unnamed, **named):
-        # unnamed args are always a list; we use the first item only; we aspect a dict here
-        # named args is a dict
-        properties = dict(named)
-        if unnamed:
-            properties.update(unnamed[0])
-
+        logging.debug("-- entering sot/ipam.py/update")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
         if self._last_request == "ipv4":
             return self.update_ipv4(properties)
         if self._last_request == "vlan":
@@ -126,34 +135,25 @@ class Ipam(object):
             logging.error("unknown to; please fix code")
 
     def set_vlan_defaults(self, *unnamed, **named):
-        # unnamed args are always a list; we use the first item only; we aspect a dict here
-        # named args is a dict
-        defaults = dict(named)
-        if unnamed:
-            defaults.update(unnamed[0])
+        logging.debug("-- entering sot/ipam.py/set_vlan_defaults")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
         logging.debug(f'setting VLAN defaults to {defaults}')
         self._vlan_defaults = defaults
 
     def set_ipv4_defaults(self,  *unnamed, **named):
-        # unnamed args are always a list; we use the first item only; we aspect a dict here
-        # named args is a dict
-        defaults = dict(named)
-        if unnamed:
-            defaults.update(unnamed[0])
+        logging.debug("-- entering sot/ipam.py/set_ipv4_defaults")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
-        logging.debug(f'setting IPv4 defaults to {defaults}')
-        self._ipv4_defaults = defaults
+        logging.debug(f'setting IPv4 defaults to {properties}')
+        self._ipv4_defaults = properties
 
     def set_prefix_defaults(self,  *unnamed, **named):
-        # unnamed args are always a list; we use the first item only; we aspect a dict here
-        # named args is a dict
-        defaults = dict(named)
-        if unnamed:
-            defaults.update(unnamed[0])
+        logging.debug("-- entering sot/ipam.py/set_prefix_defaults")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
-        logging.debug(f'setting PREFIX defaults to {defaults}')
-        self._prefix_defaults = defaults
+        logging.debug(f'setting PREFIX defaults to {properties}')
+        self._prefix_defaults = properties
 
     # -----===== attributes =====-----
 

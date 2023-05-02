@@ -318,7 +318,7 @@ class Device(object):
         return self
 
     def primary_interface(self, *unnamed, **named):
-        logging.debug("-- entering sot/device.py.py/primary_interface")
+        logging.debug("-- entering sot/device.py/primary_interface")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
         logging.debug(f'setting primary_interface_properties to {properties}')
