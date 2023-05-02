@@ -50,7 +50,6 @@ def get_file(config, properties):
     logging.debug(f'got content of file {local_path}')
     return content
 
-
 def edit_file(config, *unnamed, **named):
     properties = dict(named)
     if unnamed:

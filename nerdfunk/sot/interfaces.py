@@ -31,7 +31,8 @@ class Interface(object):
     _tags_to_add = set()
 
     def __init__(self, interface_name, sot, device=None):
-        logging.debug(f'initializing interface {interface_name} on {device} (interface.py)')
+        logging.debug("-- entering sot/interfaces.py.py/__init__")
+        logging.debug(f'initializing interface {interface_name} on {device}')
         self._interface_name = interface_name
         self._sot = sot
         self._device = device
@@ -51,37 +52,57 @@ class Interface(object):
                 name=self._interface_name)
         return self._interface_obj
 
+    def __convert_arguments_to_properties(self, *unnamed, **named):
+        """ converts unnamed (dict) and named arguments to a single property dict """
+        logging.debug("-- entering importer.py/__convert_arguments_to_properties")
+        properties = {}
+        nn = len(unnamed)
+        for param in unnamed:
+            if isinstance(param, dict):
+                for key,value in param.items():
+                    properties[key] = value
+            elif isinstance(param, str):
+                return param
+            else:
+                logging.error(f'cannot use paramater {param} / {type(param)} as value')
+        for key,value in named.items():
+                properties[key] = value
+        
+        return properties
+
     # -----===== user commands =====----- 
 
     def get(self):
+        logging.debug("-- entering sot/interfaces.py.py/get")
         if self._interface_obj is None:
             return self._get_interface_from_nautobot()
         return self._interface_obj
 
     def add(self, *unnamed, **named):
-        # unnamed args are always a list; we use the first item only; we aspect a dict here
-        # named args is a dict
-        interface_properties = dict(named)
-        if unnamed:
-            interface_properties.update(unnamed[0])
-        interface_properties['name'] = self._interface_name
+        logging.debug("-- entering sot/interfaces.py.py/add")
+        logging.debug(f'unnamed: {unnamed} named: {named}')
+        interface = self.__convert_arguments_to_properties(*unnamed, **named)
+        properties = {}
+        properties['name'] = self._interface_name
         logging.debug(f'add interface: {self._interface_name} use_defaults: {self._use_defaults}')
 
         for key in self._interface_mandatory_properties:
-            if key not in interface_properties:
+            if key not in properties:
                 if self._use_defaults:
                     logging.error(f'mandatory property {key} is missing; using default')
-                    interface_properties[key] = self._interface_default_values.get(key)
+                    properties[key] = self._interface_default_values.get(key)
                 else:
                     logging.error(f'mandatory property {key} is missing')
                     return False
 
-        return self.__add_interface(interface_properties)
+        return self.__add_interface(properties)
 
     def set_tags(self, new_tags:set):
+        logging.debug("-- entering sot/interfaces.py.py/set_tags")
         return self.add_tags(new_tags, False)
 
     def add_tags(self, new_tags:set, merge_tags=True):
+        logging.debug("-- entering sot/interfaces.py.py/add_tags")
         self.open_nautobot()
         logging.debug(f'setting tags {new_tags} on interface {self._interface_name}')
 
@@ -141,6 +162,7 @@ class Interface(object):
     # -----===== Interface Management =====-----
 
     def __add_interface(self, interface):
+        logging.debug("-- entering sot/interfaces.py.py/__add_interface")
         self.open_nautobot()
         nb_interface = self._nautobot.dcim.interfaces.get(
             device_id=self._device.id,

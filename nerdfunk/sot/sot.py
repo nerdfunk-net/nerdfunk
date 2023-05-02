@@ -5,6 +5,7 @@ from . import ipam
 from . import getter
 from . import device
 from . import central
+from . import importer
 from ..utilities import misc
 
 
@@ -16,6 +17,7 @@ class Sot:
     __devices = {}
     __ipam = None
     __getter = None
+    __importer = None
     __central = None
     _sot_config = None
 
@@ -43,6 +45,10 @@ class Sot:
             if self.__central is None:
                 self.__central = central.Central(self)
             return self.__central
+        if item == "importer":
+            if self.__importer is None:
+                self.__importer = importer.Importer(self)
+            return self.__importer
 
     def get_token(self):
         return self._sot_config['nautobot']['token']

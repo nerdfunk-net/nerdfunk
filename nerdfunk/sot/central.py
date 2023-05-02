@@ -21,7 +21,7 @@ class Central(object):
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
     def get_entity(self, calling_function, title, message, getter):
-
+        logging.debug("-- entering sot/central.py/get_entity")
         entity = None
         message = dict(message)
         not_found = dict(message)
@@ -49,6 +49,7 @@ class Central(object):
         return entity
 
     def update_entity(self, getter_function, properties, title, message, getter):
+        logging.debug("-- entering sot/central.py/update_entity")
         """
         getter_function: used to get the updates entity
         properties: the new properties of the entity
@@ -110,9 +111,9 @@ class Central(object):
         message = dict(message)
         already_in_sot = dict(message)
         already_in_sot.update({'job': 'add %s' % title,
-                            'success': False,
-                            'log': '%s already in sot' % title
-                            })
+                               'success': False,
+                               'log': '%s already in sot' % title
+                               })
         addition_successfull = dict(message)
         addition_successfull.update({'job': 'added %s' % title,
                                     'success': True,
@@ -138,14 +139,17 @@ class Central(object):
             if entity is not None:
                 logging.debug(f'{title} already in sot')
                 if return_device:
+                    logging.debug(f'-- leaving central.py/add_entity')
                     return entity
                 else:
+                    logging.debug(f'-- leaving central.py/add_entity')
                     return None
 
         try:
             success, response = self.get_ids(properties)
             if not success:
                 logging.error(f'could not convert items to IDs; response: {response}')
+                logging.debug(f'-- leaving central.py/add_entity')
                 return None
 
             item = calling_function.create(properties)
@@ -153,13 +157,16 @@ class Central(object):
                 logging.debug("%s added to sot" % title)
             else:
                 logging.debug("%s not added to sot" % title)
+            logging.debug(f'-- leaving central.py/add_entity')
             return item
         except Exception as exc:
             logging.error("%s not added to sot; got exception %s" % (title, exc))
             got_exception.update({'exception': exc})
+            logging.debug(f'-- leaving central.py/add_entity')
             return None
 
     def delete_entity(self, calling_function, title, message, getter):
+        logging.debug("-- entering sot/central.py/delete_entity")
         message = dict(message)
         not_found = dict(message)
         not_found.update({'job': 'delete %s' % title,
@@ -211,6 +218,7 @@ class Central(object):
         # -----===== general methods =====-----
 
     def _get_vlan(self, name, site):
+        logging.debug("-- entering sot/central.py/_get_vlan")
         logging.debug(f'getting vlan: {name} / {site}')
         self.open_nautobot()
 
@@ -228,6 +236,7 @@ class Central(object):
         return None
 
     def get_ids(self, newconfig, convert_device_to_uuid=False, convert_interface_to_uuid=False):
+        logging.debug("-- entering sot/central.py/get_ids")
         self.open_nautobot()
         success = True
         error = ""
