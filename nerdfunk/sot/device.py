@@ -347,6 +347,7 @@ class Device(object):
     # -----===== Device Management =====-----
 
     def add_device(self, device_properties):
+        logging.debug('-- entering device.py/add_device')
         self.open_nautobot()
         logging.debug(f'add device: {device_properties} use_defaults: {self._use_defaults}')
         for key in self._device_mandatory_properties:
@@ -365,6 +366,9 @@ class Device(object):
                                     {'name': self._device_name},
                                     {'name': self._device_name},
                                     self._return_device)
+        if nb_device is None:
+            logging.error(f'could not add device {self._device_name} to SOT')
+            return None
 
         # check if we have to add a primary interface
         if self._primary_interface:

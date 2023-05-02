@@ -77,6 +77,7 @@ class Ipam(object):
             return self.get_prefix()
 
     def add(self, *unnamed, **named):
+        logging.debug(f'-- entering ipam.py/add')
         # unnamed args are always a list; we use the first item only; we aspect a dict here
         # named args is a dict
         properties = dict(named)
@@ -391,8 +392,10 @@ class Ipam(object):
         return None
 
     def add_vlan(self, properties):
+        logging.debug(f'-- entering ipam.py/add_vlan')
         self.open_nautobot()
-        logging.debug(f'adding VLAN {properties} to sot')
+        skip = False
+        logging.debug(f'adding VLAN {self._last_requested_vlan} with properties {properties} to sot')
         if self._use_defaults:
             logging.debug(f'adding default values to properties')
             properties.update(self._vlan_defaults)
@@ -404,6 +407,7 @@ class Ipam(object):
                                'name': 'vlan-%s' % self._last_requested_vlan,
                                'status': 'active'})
 
+        logging.debug(f'getting all vlans with vid {properties["vid"]}')
         vlans = self._nautobot.ipam.vlans.filter(vid=properties['vid'])
         for vlan in vlans:
             try:
@@ -411,16 +415,20 @@ class Ipam(object):
             except Exception:
                 site_name = None
 
-            if vlan.vid == properties.get('vid') and site_name == properties.get('site'):
+            logging.debug("checking vlan.vid %s / %s site_name: %s / %s" % \
+                (vlan.vid, properties.get('vid'), site_name, properties.get('site')))
+            if int(vlan.vid) == int(properties.get('vid')) and str(site_name) == str(properties.get('site')):
                 logging.debug(f'VLAN already in sot')
-
-        message = {'vid': properties.get('vid'), 'site': properties.get('site')}
-        return self._sot.central.add_entity(self._nautobot.ipam.vlans,
-                                  properties,
-                                  "VLAN",
-                                  message,
-                                  None,
-                                  self._return_device)
+                skip = True
+            
+        if not skip:
+            message = {'vid': properties.get('vid'), 'site': properties.get('site')}
+            return self._sot.central.add_entity(self._nautobot.ipam.vlans,
+                                                    properties,
+                                                    "VLAN",
+                                                    message,
+                                                    None,
+                                                    self._return_device)
 
     def delete_vlan(self):
         self.open_nautobot()
@@ -495,7 +503,7 @@ class Ipam(object):
         self.open_nautobot()
         logging.debug(f'prepare assignment of IP address: {ip_address}')
 
-        if isinstance(kwargs[0], IpAddresses):
+        if isinstance(ip_address, IpAddresses):
             logging.debug("IP address is obj")
             nb_ipadd = self._nautobot.ipam.ip_addresses.get(
                 id=ip_address.id)
@@ -554,7 +562,7 @@ class Ipam(object):
             logging.error("unknown interface")
             return None
 
-        # now we have the address (kwargs[0]), the interface and the device
+        # now we have the address, the interface and the device
         try:
             logging.debug(f'assign IP address %s to %s' % (
                 ip_address,

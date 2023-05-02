@@ -83,7 +83,11 @@ class Devicemanagement:
 
         self.__connection = Scrapli(**device)
         logging.debug("opening connection to device (%s)" % self.__ip_address)
-        self.__connection.open()
+        try:
+            self.__connection.open()
+        except Exception as exc:
+            logging.error(f'could not connect to {self.__ip_address}')
+            return False
 
         return True
 
@@ -116,8 +120,13 @@ class Devicemanagement:
             command = cmd["command"]["cmd"]
             logging.debug("sending command %s" % command)
             if not self.__connection:
-                self.open()
-            response = self.__connection.send_command(command)
+                if not self.open():
+                    return None
+            try:
+                response = self.__connection.send_command(command)
+            except Exception as exc:
+                logigng.error("could not send command %s toi device; got exception %s" % (command, exc))
+                return None
 
             filename = cmd["command"]["template"].get(self.__platform)
             logging.debug("filename is %s" % filename)
@@ -200,17 +209,33 @@ class Devicemanagement:
 
                 files.append(os.path.basename(filename))
                 values = self.send_and_parse_command(config['facts'])
+                if values is None:
+                    return None
                 # print(json.dumps(values, indent=4))
 
         facts["manufacturer"] = self.__manufacturer
         if "show version" in values:
-            facts["os_version"] = values["show version"][0]["VERSION"]
-            facts["software_image"] = values["show version"][0]["SOFTWARE_IMAGE"]
+            facts["os_version"] = values["show version"][0].get("VERSION",None)
+            if facts["os_version"] is None:
+                # nxos uses OS instead of version
+                facts["os_version"] = values["show version"][0].get('OS', 'unknown')
+            facts["software_image"] = values["show version"][0].get("SOFTWARE_IMAGE", None)
+            if facts["software_image"] is None:
+                # nxos uses BOOT_IMAGE instead of SOFTWARE_IMAGE
+                facts["software_image"] = values["show version"][0].get("BOOT_IMAGE",'unknown')
             facts["serial_number"] = values["show version"][0]["SERIAL"]
-            facts["model"] = values["show version"][0]["HARDWARE"][0]
+            if 'HARDWARE' in values["show version"][0]:
+                facts["model"] = values["show version"][0]["HARDWARE"][0]
+            else:
+                # nxos uses PLATFORM instead of HARDWARE
+                model = values["show version"][0].get('PLATFORM',None)
+                if model is None:
+                    facts["model"] = "default_type"
+                else:
+                    facts["model"] = "nexus-%s" % model
             facts["hostname"] = values["show version"][0]["HOSTNAME"]
 
-        if "show hosts summary" in values:
+        if "show hosts summary" in values and len(values["show hosts summary"]) > 0:
             facts["fqdn"] = "%s.%s" % (facts.get("hostname"), values["show hosts summary"][0]["DEFAULT_DOMAIN"])
         else:
             facts["fqdn"] = facts.get("hostname")

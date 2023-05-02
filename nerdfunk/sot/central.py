@@ -106,7 +106,7 @@ class Central(object):
             return None
 
     def add_entity(self, calling_function, properties, title, message, getter, return_device = True):
-        logging.debug(f'add_entity called')
+        logging.debug(f'-- entering central.py/add_entity')
         message = dict(message)
         already_in_sot = dict(message)
         already_in_sot.update({'job': 'add %s' % title,
@@ -145,7 +145,7 @@ class Central(object):
         try:
             success, response = self.get_ids(properties)
             if not success:
-                logging.error("could not convert items to IDs")
+                logging.error(f'could not convert items to IDs; response: {response}')
                 return None
 
             item = calling_function.create(properties)
