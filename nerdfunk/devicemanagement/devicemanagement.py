@@ -93,7 +93,8 @@ class Devicemanagement:
 
     def close(self):
         logging.debug("closing connection to device (%s)" % self.__ip_address)
-        self.__connection.close()
+        if self.__connection:
+            self.__connection.close()
 
     def get_config(self, configtype):
         """

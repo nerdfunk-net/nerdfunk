@@ -241,17 +241,6 @@ class Central(object):
         success = True
         error = ""
 
-            # sometimes we need the device id sometimes the name
-            # eg. the device id used by add_interface
-            # if convert_device_to_uuid and 'name' in newconfig:
-            #     logging.debug("converting device %s name to UUID" % newconfig['name'])
-            #     nb_device = self._nautobot.dcim.devices.get(name=newconfig['name'])
-            #     if nb_device is None:
-            #         success = False
-            #         error = 'unknown device "%s"' % newconfig['name']
-            #     else:
-            #         newconfig['device'] = nb_device.id
-
         if convert_interface_to_uuid and 'interface' in newconfig:
             nb_interface = self._nautobot.dcim.interfaces.get(name=newconfig['interface'])
             if nb_interface is None:
