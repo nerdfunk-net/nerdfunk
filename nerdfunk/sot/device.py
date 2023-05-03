@@ -1,5 +1,6 @@
 import logging
 import json
+import re
 from . import interfaces
 from . import ipam
 from pynautobot import api
@@ -20,6 +21,7 @@ class Device(object):
     # device properties
     _device_name = None
     _device_obj = None
+    _device_ip = None
     _device_properties = {}
     _device_mandatory_properties = ['device_type', 'device_role',
                                     'platform', 'serial', 'site', 'status']
@@ -47,11 +49,19 @@ class Device(object):
     # connection to nautobot
     _nautobot = None
 
-    def __init__(self, sot, devicename):
+    # regex
+    _REGEX_IPV4 = r"^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$"
+
+    def __init__(self, sot, device_or_ip):
         logging.debug("-- entering sot/device.py.py/__init__")
-        logging.debug(f'initializing device {devicename} (device.py)')
+        logging.debug(f'initializing device {device_or_ip} (device.py)')
         self._sot = sot
-        self._device_name = devicename
+        # check if device_or_ip is IP or name:
+        if re.match(self._REGEX_IPV4, device_or_ip):
+            logging.debug(f'{device_or_ip} is an IP address')
+            self._device_ip = device_or_ip
+        else:
+            self._device_name = device_or_ip
 
     # internal method 
 
@@ -64,10 +74,15 @@ class Device(object):
         if self._device_obj is None:
             logging.debug("getting device from sot")
             self.open_nautobot()
-            self._device_obj = self._sot.central.get_entity(self._nautobot.dcim.devices, 
+            if self._device_name is not None:
+                self._device_obj = self._sot.central.get_entity(self._nautobot.dcim.devices, 
                                                   "Device", 
                                                   {'name': self._device_name},
                                                   {'name': self._device_name})
+            elif self._device_ip is not None:
+                logging.debug(f'sending query to get device using IP {self._device_ip}')
+                self._device_obj = self._sot.get.device(ip=self._device_ip)
+
         return self._device_obj
 
     def _get_interface(self, interface):

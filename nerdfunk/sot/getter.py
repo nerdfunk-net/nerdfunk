@@ -46,6 +46,8 @@ class Getter(object):
 
     def device(self, *unnamed, **named):
         logging.debug("getting device from sot")
+        self.open_nautobot()
+        getter = None
 
         if unnamed:
             for item in unnamed:
@@ -54,12 +56,16 @@ class Getter(object):
         if 'device' in named:
             getter = {'name': named.get('device')}
         elif 'ip' in named:
-            ip_address = named.get('ip')
-            getter = {'primary_ip4': named.get('ip')}
+            response = self.query(name='device_properties_by_cidr', 
+                                query_params={'cidr': named.get('ip')})
+            if len(response['data']['ip_addresses']) > 0:
+                getter = {'name': response['data']['ip_addresses'][0]['primary_ip4_for']['hostname']}
+            else:
+                logging.debug("device %s not found in sot" % named.get('ip'))
+                return None
 
-        self.open_nautobot()
         device = self._sot.central.get_entity(self._nautobot.dcim.devices, "Device", getter, getter)
-        
+
         if self._output_format == "obj":
             return device
         elif self._output_format == "dict":

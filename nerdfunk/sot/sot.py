@@ -61,7 +61,6 @@ class Sot:
 
     def device(self, name):
         if name not in self.__devices:
-            logging.debug(f'init device {name}')
             self.__devices[name] = device.Device(self, name)
         return self.__devices[name]
 

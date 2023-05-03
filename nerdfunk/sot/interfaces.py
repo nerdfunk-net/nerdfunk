@@ -54,7 +54,7 @@ class Interface(object):
 
     def __convert_arguments_to_properties(self, *unnamed, **named):
         """ converts unnamed (dict) and named arguments to a single property dict """
-        logging.debug("-- entering importer.py/__convert_arguments_to_properties")
+        logging.debug("-- entering interfaces.py/__convert_arguments_to_properties")
         properties = {}
         nn = len(unnamed)
         for param in unnamed:
@@ -81,9 +81,9 @@ class Interface(object):
     def add(self, *unnamed, **named):
         logging.debug("-- entering sot/interfaces.py.py/add")
         logging.debug(f'unnamed: {unnamed} named: {named}')
-        interface = self.__convert_arguments_to_properties(*unnamed, **named)
-        properties = {}
-        properties['name'] = self._interface_name
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+        if 'name' not in properties:
+            properties['name'] = self._interface_name
         logging.debug(f'add interface: {self._interface_name} use_defaults: {self._use_defaults}')
 
         for key in self._interface_mandatory_properties:
