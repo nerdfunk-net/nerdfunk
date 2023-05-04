@@ -6,7 +6,9 @@ from . import getter
 from . import device
 from . import central
 from . import importer
+from . import auth
 from ..utilities import misc
+from dotenv import load_dotenv, dotenv_values
 
 
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
@@ -18,10 +20,15 @@ class Sot:
     __ipam = None
     __getter = None
     __importer = None
+    __auth = None
     __central = None
     _sot_config = None
 
-    def __new__(cls, filename=DEFAULT_FILENAME):
+    def __new__(cls, **named):
+        if 'filename' in named:
+            filename = named['filename']
+        else:
+            filename = DEFAULT_FILENAME
         # we use a singleton pattern to ensure we have one
         # onboarding instance and not more
         if cls._instance is None:
@@ -30,6 +37,7 @@ class Sot:
             # read SOT config
             logging.debug("reading config %s/%s" % (BASEDIR, filename))
             cls._sot_config = misc.read_config("%s/%s" % (BASEDIR, filename))
+                
         return cls._instance
 
     def __getattr__(self, item):
@@ -49,6 +57,10 @@ class Sot:
             if self.__importer is None:
                 self.__importer = importer.Importer(self)
             return self.__importer
+        if item == "auth":
+            if self.__auth is None:
+                self.__auth = auth.Auth(self)
+            return self.__auth
 
     def get_token(self):
         return self._sot_config['nautobot']['token']
@@ -64,4 +76,29 @@ class Sot:
             self.__devices[name] = device.Device(self, name)
         return self.__devices[name]
 
+    def auth(self, **named):
+        parameter = dict(named)
+        # Get the path to the directory this file is in
+        BASEDIR = os.path.abspath(os.path.dirname(__file__))
+        # Connect the path with the '.env' file name
+        load_dotenv(os.path.join(BASEDIR, '.env'))
 
+        salt = named.get('salt')
+        if salt is None:
+            logging.debug(f'using default salt from .env')
+            parameter['salt'] = os.getenv('SALT')
+
+        encryption_key = named.get('encryption_key')
+        if encryption_key is None:
+            logging.debug(f'using default encryption_key from .env')
+            parameter['encryption_key'] = os.getenv('ENCRYPTIONKEY')
+
+        iterations = named.get('iterations')
+        if iterations is None:
+            logging.debug(f'using default iterations from .env')
+            parameter['iterations'] = int(os.getenv('ITERATIONS'))
+
+        logging.debug(f'salt: {salt} encryption_key: {encryption_key}')
+        if self.__auth is None:
+            self.__auth = auth.Auth(self, **parameter)
+        return self.__auth
