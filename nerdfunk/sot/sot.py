@@ -1,5 +1,6 @@
 import logging
 import os
+import json
 from . import device
 from . import ipam
 from . import getter
@@ -27,8 +28,10 @@ class Sot:
     def __new__(cls, **named):
         if 'filename' in named:
             filename = named['filename']
+            del named['filename']
         else:
             filename = DEFAULT_FILENAME
+        
         # we use a singleton pattern to ensure we have one
         # onboarding instance and not more
         if cls._instance is None:
@@ -37,6 +40,8 @@ class Sot:
             # read SOT config
             logging.debug("reading config %s/%s" % (BASEDIR, filename))
             cls._sot_config = misc.read_config("%s/%s" % (BASEDIR, filename))
+            cls._sot_config['nautobot'].update(named)
+            # print(json.dumps(cls._sot_config, indent=4))
                 
         return cls._instance
 

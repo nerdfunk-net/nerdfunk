@@ -1,9 +1,5 @@
 ---
 nautobot:
-    url: http://127.0.0.1:8080
-    user: username
-    password: password
-    token: __TOKEN__
     hldm: >
         query ($name: [String], $id: [String], $tag: [String]) {
           devices(name: $name, id: $id, tag: $tag) {
