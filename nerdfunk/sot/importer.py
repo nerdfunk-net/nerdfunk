@@ -62,7 +62,6 @@ class Importer(object):
                 getter = {'site': item.get('slsiteug')}
             else:
                 getter = None
-            print(item)
             success = self._sot.central.add_entity(creator,
                                                    item,
                                                    title,
@@ -84,6 +83,8 @@ class Importer(object):
         if 'file' in properties:
             content = self.open_file(properties['file'])
             self.import_data(content['sites'], "site", self._nautobot.dcim.sites)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "site", self._nautobot.dcim.sites)
 
     def manufacturers(self, *unnamed, **named):
         logging.debug("-- entering importer.py/manufacturers")
@@ -93,7 +94,20 @@ class Importer(object):
         if 'file' in properties:
             content = self.open_file(properties['file'])
             self.import_data(content['manufacturers'], "manufacturer", self._nautobot.dcim.manufacturers)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "manufacturer", self._nautobot.dcim.manufacturers)
+    
+    def platforms(self, *unnamed, **named):
+        logging.debug("-- entering importer.py/platform")
+        self.open_nautobot()
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
+        if 'file' in properties:
+            content = self.open_file(properties['file'])
+            self.import_data(content['platform'], "platform", self._nautobot.dcim.platforms)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "platform", self._nautobot.dcim.platforms)
+    
     def device_roles(self, *unnamed, **named):
         logging.debug("-- entering importer.py/device_roles")
         self.open_nautobot()
@@ -102,15 +116,19 @@ class Importer(object):
         if 'file' in properties:
             content = self.open_file(properties['file'])
             self.import_data(content['device_roles'], "device_roles", self._nautobot.dcim.device_roles)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "device_roles", self._nautobot.dcim.device_roles)
 
-    def prefixe(self, *unnamed, **named):
+    def prefixes(self, *unnamed, **named):
         logging.debug("-- entering importer.py/prefixe")
         self.open_nautobot()
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
         if 'file' in properties:
             content = self.open_file(properties['file'])
-            self.import_data(content['prefixe'], "prefixe", self._nautobot.ipam.prefixes)
+            self.import_data(content['prefixes'], "prefixes", self._nautobot.ipam.prefixes)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "prefixes", self._nautobot.ipam.prefixes)
 
     def device_types(self, *unnamed, **named):
         logging.debug("-- entering importer.py/device_types")
@@ -121,4 +139,4 @@ class Importer(object):
             content = self.open_file(properties['file'])
             self.import_data(content['device_types'], "device_types", self._nautobot.dcim.device_types)
         elif 'properties' in properties:
-            self.import_data([properties['properties']], "device_types", self._nautobot.dcim.device_types)
+            self.import_data(properties['properties'], "device_types", self._nautobot.dcim.device_types)

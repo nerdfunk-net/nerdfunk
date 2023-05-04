@@ -45,6 +45,7 @@ def get_file(config, properties):
     if local_path.is_file():
         content = local_path.read_text()
     else:
+        content = None
         logging.error(f'file {local_path} does not exists')
 
     logging.debug(f'got content of file {local_path}')
