@@ -12,6 +12,7 @@ class Interface(object):
     _todos = {}
     _use_defaults = False
     _return_interface = True
+    _bulk = False
 
     # interface properties
     _interface_name = None
@@ -78,8 +79,8 @@ class Interface(object):
             return self._get_interface_from_nautobot()
         return self._interface_obj
 
-    def add(self, *unnamed, **named):
-        logging.debug("-- entering sot/interfaces.py.py/add")
+    def get_properties(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py.py/_get_properties")
         logging.debug(f'unnamed: {unnamed} named: {named}')
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
         if 'name' not in properties:
@@ -93,9 +94,28 @@ class Interface(object):
                     properties[key] = self._interface_default_values.get(key)
                 else:
                     logging.error(f'mandatory property {key} is missing')
-                    return False
+                    return None
 
-        return self.__add_interface(properties)
+        # convert property values to id (vlan, tags, etc.)
+        success, error = self._sot.central.get_ids(properties)
+        if not success:
+            logging.error(f'could not convert properties to IDs; {error}')
+            return None
+        # add device name to properties if not set by user
+        if 'device' not in properties:
+            properties['device'] = self._device.id
+
+        return properties
+
+    def add(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py.py/add")
+        logging.debug(f'unnamed: {unnamed} named: {named}')
+        return self.__add_interface(self.get_properties(*unnamed, **named))
+
+    def update(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py.py/update")
+        logging.debug(f'unnamed: {unnamed} named: {named}')
+        return self.__update_interface(self.get_properties(*unnamed, **named))
 
     def set_tags(self, new_tags:set):
         logging.debug("-- entering sot/interfaces.py.py/set_tags")
@@ -164,30 +184,20 @@ class Interface(object):
     def __add_interface(self, interface):
         logging.debug("-- entering sot/interfaces.py.py/__add_interface")
         self.open_nautobot()
-        nb_interface = self._nautobot.dcim.interfaces.get(
-            device_id=self._device.id,
-            name=interface['name']
-        )
+        return self._sot.central.add_entity(func=self._nautobot.dcim.interfaces,
+                                            properties=interface,
+                                            title="Interface",
+                                            message={'name': self._interface_name},
+                                            getter={'name': self._interface_name},
+                                            return_entity=self._return_interface,
+                                            convert_id=False)
 
-        if nb_interface is not None:
-            logging.info("interface %s already exists" % self._interface_name)
-            if self._return_interface:
-                return nb_interface
-            else:
-                return None
-        else:
-            logging.debug("converting properties to IDs")
-            logging.debug(interface)
-            success, error = self._sot.central.get_ids(interface)
-            if not success:
-                logging.error(f'could not convert properties to IDs; {error}')
-                return False
-
-            # try:
-            interface['device'] = self._device.id
-            logging.debug(interface)
-            nb_interface = self._nautobot.dcim.interfaces.create(interface)
-            self._interface_obj = nb_interface
-            logging.debug("added new interface %s/%s" % (self._device.name, self._interface_name))
-            return nb_interface
-
+    def __update_interface(self, interface):
+        logging.debug("-- entering sot/interfaces.py.py/__update_interface")
+        self.open_nautobot()
+        return self._sot.central.update_entity(func=self._nautobot.dcim.interfaces,
+                                               properties=interface,
+                                               title="Interface",
+                                               message={'name': self._interface_name},
+                                               getter={'name': self._interface_name},
+                                               convert_id=False)

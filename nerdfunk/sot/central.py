@@ -20,7 +20,7 @@ class Central(object):
         if self._nautobot is None:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
-    def get_entity(self, calling_function, title, message, getter):
+    def get_entity(self, func, title, message, getter):
         logging.debug("-- entering sot/central.py/get_entity")
         entity = None
         message = dict(message)
@@ -37,7 +37,7 @@ class Central(object):
                             })
 
         try:
-            entity = calling_function.get(**getter)
+            entity = func.get(**getter)
             if entity is None:
                 logging.debug(f'{title} not found in sot')
                 return None
@@ -48,10 +48,10 @@ class Central(object):
 
         return entity
 
-    def update_entity(self, getter_function, properties, title, message, getter):
+    def update_entity(self, func, properties, title, message, getter, convert_id=True):
         logging.debug("-- entering sot/central.py/update_entity")
         """
-        getter_function: used to get the updates entity
+        func: used to get the updates entity
         properties: the new properties of the entity
         """
         message = dict(message)
@@ -81,7 +81,7 @@ class Central(object):
         # check if entity is part of sot
         try:
             logging.debug(f'getter: {getter}')
-            entity = getter_function.get(**getter)
+            entity = func.get(**getter)
             if entity is None:
                 logging.debug(f'{title} not found in sot')
                 return None
@@ -90,12 +90,12 @@ class Central(object):
             got_exception.update({'exception': exc})
             return None
 
-        try:
+        if convert_id:
             success, response = self.get_ids(properties)
             if not success:
                 logging.error("could not convert items to IDs")
                 return None
-
+        try:
             success = entity.update(properties)
             if success:
                 logging.debug("%s updated in sot" % title)
@@ -106,7 +106,9 @@ class Central(object):
             logging.error("%s not updated in sot; got exception %s" % (title, exc))
             return None
 
-    def add_entity(self, calling_function, properties, title, message, getter, return_device = True):
+        return entity
+
+    def add_entity(self, func, properties, title, message, getter, return_entity = True, convert_id=True):
         logging.debug(f'-- entering central.py/add_entity')
         message = dict(message)
         already_in_sot = dict(message)
@@ -116,43 +118,43 @@ class Central(object):
                                })
         addition_successfull = dict(message)
         addition_successfull.update({'job': 'added %s' % title,
-                                    'success': True,
-                                    'log': '%s added to sot' % title,
-                                    })
+                                     'success': True,
+                                     'log': '%s added to sot' % title,
+                                     })
 
         addition_not_successfull = dict(message)
         addition_not_successfull.update({'job': 'added %s' % title,
-                                        'success': False,
-                                        'log': '%s not added to sot' % title,
-                                        })
+                                         'success': False,
+                                         'log': '%s not added to sot' % title,
+                                         })
 
         got_exception = dict(message)
         got_exception.update({'job': 'added %s' % title,
-                                    'success': False,
-                                    'log': 'error: got exception'
-                            })
+                              'success': False,
+                              'log': 'error: got exception'
+                              })
 
         # add entity to sot
         if getter is not None:
             logging.debug(f'getter function: {getter}')
-            entity = calling_function.get(**getter)
+            entity = func.get(**getter)
             if entity is not None:
                 logging.debug(f'{title} already in sot')
-                if return_device:
+                if return_entity:
                     logging.debug(f'-- leaving central.py/add_entity')
                     return entity
                 else:
                     logging.debug(f'-- leaving central.py/add_entity')
                     return None
 
-        try:
+        if convert_id:
             success, response = self.get_ids(properties)
             if not success:
                 logging.error(f'could not convert items to IDs; response: {response}')
                 logging.debug(f'-- leaving central.py/add_entity')
                 return None
-
-            item = calling_function.create(properties)
+        try:
+            item = func.create(properties)
             if item:
                 logging.debug("%s added to sot" % title)
             else:
@@ -165,7 +167,7 @@ class Central(object):
             logging.debug(f'-- leaving central.py/add_entity')
             return None
 
-    def delete_entity(self, calling_function, title, message, getter):
+    def delete_entity(self, func, title, message, getter):
         logging.debug("-- entering sot/central.py/delete_entity")
         message = dict(message)
         not_found = dict(message)
@@ -193,7 +195,7 @@ class Central(object):
 
         # look if entity is in sot
         try:
-            entity = calling_function.get(**getter)
+            entity = func.get(**getter)
             if entity is None:
                 logging.debug(f'{title} not found in sot')
                 return None
@@ -235,7 +237,7 @@ class Central(object):
         logging.debug("no VLAN found")
         return None
 
-    def get_ids(self, newconfig, convert_device_to_uuid=False, convert_interface_to_uuid=False):
+    def get_ids(self, newconfig, convert_device_to_uuid=True, convert_interface_to_uuid=False):
         logging.debug("-- entering sot/central.py/get_ids")
         self.open_nautobot()
         success = True
@@ -249,7 +251,7 @@ class Central(object):
             else:
                 newconfig['interface'] = nb_interface.id
 
-        if 'device' in newconfig:
+        if 'device' in newconfig and convert_device_to_uuid:
             logging.debug("converting device %s name to UUID" % newconfig['device'])
             nb_device = self._nautobot.dcim.devices.get(name=newconfig['device'])
             if nb_device is None:

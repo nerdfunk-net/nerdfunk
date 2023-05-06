@@ -17,6 +17,7 @@ class Device(object):
     _todos = {}
     _use_defaults = False
     _return_device = True
+    _bulk = False
 
     # device properties
     _device_name = None
@@ -34,6 +35,8 @@ class Device(object):
     # dict of all interfaces of the device
     _interfaces = {}
     _interface_defaults = {}
+    _bulk_insert_operation = []
+    _bulk_update_operation = []
 
     # tags
     _device_tags = []
@@ -154,9 +157,16 @@ class Device(object):
                     interface,
                     self._sot,
                     self._get_device_from_nautobot())
-            return self._interfaces[interface] \
-                .use_defaults(self._use_defaults) \
-                .add(properties)
+            if self._bulk:
+                iface_props = self._interfaces[interface] \
+                    .use_defaults(self._use_defaults) \
+                    .get_properties(properties)
+                self._bulk_insert_operation.append(iface_props)
+            else:
+                # add interface now
+                return self._interfaces[interface] \
+                    .use_defaults(self._use_defaults) \
+                    .add(properties)
         else:
             return self.add_device(properties)
 
@@ -189,9 +199,9 @@ class Device(object):
                     interface,
                     self._sot,
                     self._get_device_from_nautobot())
-            return self._interfaces[interface] \
-                .use_defaults(self._use_defaults) \
-                .update(properties)
+                return self._interfaces[interface] \
+                    .use_defaults(self._use_defaults) \
+                    .update(properties)
         else:
             logging.debug(f'update device: {properties}')
             if 'name' not in properties:
@@ -313,6 +323,18 @@ class Device(object):
             else:
                 logging.error(f'connection could not created successfully')
 
+    def commit(self):
+        logging.debug('-- entering device.py/commit')
+        self.open_nautobot()
+
+        if len(self._bulk_insert_operation) > 0:
+            logging.debug(f'adding {len(self._bulk_insert_operation)} interface(s)')
+            try:
+                nb_interface = self._nautobot.dcim.interfaces.create(self._bulk_insert_operation)
+            except Exception as exc:
+                logging.error(f'could not add entity; got exception {exc}')
+                return None
+
     # -----===== attributes =====-----
 
     def use_defaults(self, use_defaults):
@@ -379,6 +401,12 @@ class Device(object):
         # is already part of sot
         logging.debug(f'setting _return_device to {return_device}')
         self._return_device = return_device
+        return self
+
+    def bulk(self, bulk):
+        logging.debug('-- entering device.py/bulk')
+        logging.debug(f'setting bulk to {bulk}')
+        self._bulk = bulk
         return self
 
     # -----===== Device Management =====-----
