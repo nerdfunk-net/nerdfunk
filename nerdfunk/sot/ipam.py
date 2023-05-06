@@ -25,7 +25,7 @@ class Ipam(object):
                         'description': None}
 
     _ipv4_assignments = []
-    _ipv4_defaults = {}
+    _ipv4_defaults = {'status': 'active'}
 
     _vlan_defaults = {}
     _prefix_defaults = {}
@@ -35,6 +35,12 @@ class Ipam(object):
     _last_requested_vlan = None
     _last_requested_prefix =  None
     _last_requested_site =  None
+
+    # bulk operations
+    _bulk = False
+    _bulk_insert_ipv4_operation = []
+    _bulk_insert_prefixe_operation = []
+    _bulk_insert_vlan_operation = []
 
     # ip address to assign an interface
     _ipv4_assign_address = None
@@ -98,11 +104,21 @@ class Ipam(object):
         logging.debug("-- entering sot/ipam.py/add")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
         if self._last_request == "ipv4":
-            return self.add_ipv4(properties)
+            properties.update({'address': self._last_requested_ipv4})
+            if self._bulk:
+                self._bulk_insert_ipv4_operation.append(properties)
+            else:
+                return self.add_ipv4(properties)
         if self._last_request == "vlan":
-            return self.add_vlan(properties)
+            if self._bulk:
+                self._bulk_vlan_ipv4_operation.append(properties)
+            else:
+                return self.add_vlan(properties)
         if self._last_request == "prefix":
-            return self.add_prefix(properties)
+            if self._bulk:
+                self._bulk_insert_prefixe_operation.append(properties)
+            else:
+                return self.add_prefix(properties)
 
     def update(self, *unnamed, **named):
         logging.debug("-- entering sot/ipam.py/update")
@@ -155,6 +171,34 @@ class Ipam(object):
         logging.debug(f'setting PREFIX defaults to {properties}')
         self._prefix_defaults = properties
 
+    def commit(self):
+        logging.debug('-- entering ipam.py/commit')
+        self.open_nautobot()
+
+        if len(self._bulk_insert_ipv4_operation) > 0:
+            logging.debug(f'adding {len(self._bulk_insert_ipv4_operation)} IP addresses(s)')
+            try:
+                nb_interface = self._nautobot.ipam.ip_addresses.create(self._bulk_insert_ipv4_operation)
+                self._bulk_insert_ipv4_operation = []
+            except Exception as exc:
+                logging.error(f'could not add entity; got exception {exc}')
+
+        if len(self._bulk_insert_vlan_operation) > 0:
+            logging.debug(f'adding {len(self._bulk_insert_vlan_operation)} VLAN(s)')
+            try:
+                nb_interface = self._nautobot.ipam.vlans.create(self._bulk_insert_vlan_operation)
+                self._bulk_insert_vlan_operation = []
+            except Exception as exc:
+                logging.error(f'could not add entity; got exception {exc}')
+
+        if len(self._bulk_insert_prefixe_operation) > 0:
+            logging.debug(f'adding {len(self._bulk_insert_prefixe_operation)} prefixe(s)')
+            try:
+                nb_interface = self._nautobot.ipam.prefixes.create(self._bulk_insert_prefixe_operation)
+                self._bulk_insert_prefixe_operation = []
+            except Exception as exc:
+                logging.error(f'could not add entity; got exception {exc}')
+                
     # -----===== attributes =====-----
 
     def device(self, device):
@@ -239,6 +283,12 @@ class Ipam(object):
         self._add_missing_ip = add_missing
         return self
 
+    def bulk(self, bulk):
+        logging.debug('-- entering ipam.py/bulk')
+        logging.debug(f'setting bulk to {bulk}')
+        self._bulk = bulk
+        return self
+
     # -----===== IP address management =====-----
 
     def get_ipv4(self):
@@ -258,15 +308,7 @@ class Ipam(object):
             logging.debug(f'adding default values to properties')
             properties.update(self._ipv4_defaults)
 
-        if len(properties) > 0:
-            if 'address' not in properties:
-                properties.update({'address': self._last_requested_ipv4})
-        else:
-            properties.update({'address': self._last_requested_ipv4,
-                               'status': 'active'})
-
         logging.debug(f'add IP address: {properties}')
-
         return self._sot.central.add_entity(self._nautobot.ipam.ip_addresses,
                                   properties, 'IP',
                                   {'address': properties['address']},
@@ -505,13 +547,11 @@ class Ipam(object):
 
         if isinstance(ip_address, IpAddresses):
             logging.debug("IP address is obj")
-            nb_ipadd = self._nautobot.ipam.ip_addresses.get(
-                id=ip_address.id)
+            nb_ipadd = self._nautobot.ipam.ip_addresses.get(id=ip_address.id)
         else:
             logging.debug("IP address is str")
             try:
-                nb_ipadd = self._nautobot.ipam.ip_addresses.get(
-                    address=ip_address)
+                nb_ipadd = self._nautobot.ipam.ip_addresses.get(address=ip_address)
             except Exception as exc:
                 logging.error("got multiple IP adresses; please fix config")
                 return None
@@ -536,12 +576,10 @@ class Ipam(object):
 
         if isinstance(self._device, Devices):
             logging.debug("device is obj")
-            nb_device = self._nautobot.dcim.devices.get(
-                id=self._device.id)
+            nb_device = self._nautobot.dcim.devices.get(id=self._device.id)
         else:
             logging.debug("device is str")
-            nb_device = self._nautobot.dcim.devices.get(
-                name=self._device)
+            nb_device = self._nautobot.dcim.devices.get(name=self._device)
 
         logging.debug("got device %s" % nb_device)
         if nb_device is None:
@@ -550,12 +588,10 @@ class Ipam(object):
 
         if isinstance(self._interface, Interfaces):
             logging.debug("interface is obj")
-            nb_interface = self._nautobot.dcim.interfaces.get(
-                id=self._interface.id)
+            nb_interface = self._nautobot.dcim.interfaces.get(id=self._interface.id)
         else:
             logging.debug("interface is str")
-            nb_interface = self._nautobot.dcim.interfaces.get(
-                device_id=nb_device.id, name=self._interface)
+            nb_interface = self._nautobot.dcim.interfaces.get(device_id=nb_device.id, name=self._interface)
         logging.debug("got interface %s" % nb_interface)
 
         if nb_interface is None:

@@ -135,6 +135,29 @@ nautobot:
           }
         }
 
+    device_interfaces: >
+        query ($name:[String]) {
+          devices(name: $name) {
+            hostname: name
+            primary_ip4 {
+              address
+            }
+            interfaces {
+              name
+              id
+              description
+              ip_addresses {
+                address
+                role
+                tags {
+                  slug
+                  name
+                }
+              }
+            }
+          }
+        }
+
     prefixe: >
         query ($prefix: String) {
           prefixes (within_include: $prefix) {

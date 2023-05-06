@@ -36,7 +36,6 @@ class Device(object):
     _interfaces = {}
     _interface_defaults = {}
     _bulk_insert_operation = []
-    _bulk_update_operation = []
 
     # tags
     _device_tags = []
@@ -143,6 +142,11 @@ class Device(object):
         else:
             logging.debug(f'returning obj of device {self._device_name}')
             return self._get_device_from_nautobot()
+
+    def get_all_interfaces(self):
+        logging.debug("-- entering sot/device.py.py/get_all_interfaces")
+        self.open_nautobot()
+        return self._nautobot.dcim.interfaces.filter(device_id=self._get_device_from_nautobot().id)
 
     def add(self, *unnamed, **named):
         logging.debug("-- entering sot/device.py.py/add")
@@ -331,6 +335,7 @@ class Device(object):
             logging.debug(f'adding {len(self._bulk_insert_operation)} interface(s)')
             try:
                 nb_interface = self._nautobot.dcim.interfaces.create(self._bulk_insert_operation)
+                self._bulk_insert_operation = []
             except Exception as exc:
                 logging.error(f'could not add entity; got exception {exc}')
                 return None
