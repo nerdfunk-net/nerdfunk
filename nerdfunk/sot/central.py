@@ -167,6 +167,23 @@ class Central(object):
             logging.debug(f'-- leaving central.py/add_entity')
             return None
 
+    def add_entity_fast(self, func, properties):
+        logging.debug(f'-- entering central.py/add_entity_fast')
+        try:
+            print(properties)
+            item = func.create(properties)
+            if item:
+                logging.debug("entity added to sot")
+            else:
+                logging.debug("entity not added to sot")
+            logging.debug(f'-- leaving central.py/add_entity_fast')
+            return item
+        except Exception as exc:
+            logging.error("entity not added to sot; got exception %s" % exc)
+            got_exception.update({'exception': exc})
+            logging.debug(f'-- leaving central.py/add_entity_fast')
+            return None
+
     def delete_entity(self, func, title, message, getter):
         logging.debug("-- entering sot/central.py/delete_entity")
         message = dict(message)
@@ -243,23 +260,6 @@ class Central(object):
         success = True
         error = ""
 
-        if convert_interface_to_uuid and 'interface' in newconfig:
-            nb_interface = self._nautobot.dcim.interfaces.get(name=newconfig['interface'])
-            if nb_interface is None:
-                success = False
-                error = 'unknown interface "%s"' % newconfig['interface']
-            else:
-                newconfig['interface'] = nb_interface.id
-
-        if 'device' in newconfig and convert_device_to_uuid:
-            logging.debug("converting device %s name to UUID" % newconfig['device'])
-            nb_device = self._nautobot.dcim.devices.get(name=newconfig['device'])
-            if nb_device is None:
-                success = False
-                error = 'unknown device "%s"' % newconfig['device']
-            else:
-                newconfig['device'] = nb_device.id
-
         if 'primary_ip4' in newconfig:
             nb_addr = self._nautobot.ipam.ip_addresses.get(address=newconfig['primary_ip4'])
             if nb_addr is None:
@@ -268,38 +268,6 @@ class Central(object):
             else:
                 newconfig['primary_ip4'] = nb_addr.id
 
-        if 'manufacturer' in newconfig:
-            nb_manufacturer = self._nautobot.dcim.manufacturers.get(slug=newconfig['manufacturer'])
-            if nb_manufacturer is None:
-                success = False
-                error = 'unknown manufacturer "%s"' % newconfig['manufacturer']
-            else:
-                newconfig['manufacturer'] = nb_manufacturer.id
-
-        if 'platform' in newconfig:
-            nb_platform = self._nautobot.dcim.platforms.get(slug=newconfig['platform'])
-            if nb_platform is None:
-                success = False
-                error = 'unknown platform "%s"' % newconfig['platform']
-            else:
-                newconfig['platform'] = nb_platform.id
-
-        if 'device_role' in newconfig:
-            nb_device_role = self._nautobot.dcim.device_roles.get(slug=newconfig['device_role'])
-            if nb_device_role is None:
-                success = False
-                error = 'unknown device_role "%s"' % newconfig['device_role']
-            else:
-                newconfig['device_role'] = nb_device_role.id
-
-        if 'device_type' in newconfig:
-            nb_device_type = self._nautobot.dcim.device_types.get(slug=newconfig['device_type'])
-            if nb_device_type is None:
-                success = False
-                error = 'unknown device_type "%s"' % newconfig['device_type']
-            else:
-                newconfig['device_type'] = nb_device_type.id
-
         if 'location' in newconfig:
             nb_location = self._nautobot.dcim.locations.get(slug=newconfig['location'])
             if nb_location is None:
@@ -307,24 +275,6 @@ class Central(object):
                 error = 'unknown location "%s"' % newconfig['location']
             else:
                 newconfig['location'] = nb_location.id
-
-        if 'lag' in newconfig:
-            # newconfig['device'] is needed and part of our newconfig
-            # when a lag is added to our sot
-            nb_lag = self._nautobot.dcim.interfaces.get(device_id=newconfig['device'], name=newconfig['lag'])
-            if nb_lag is None:
-                success = False
-                error = 'unknown lag "%s"' % newconfig['lag']
-            else:
-                newconfig['lag'] = nb_lag.id
-
-        if 'untagged_vlan' in newconfig:
-            untagged_vlan = self._get_vlan(newconfig['untagged_vlan'], newconfig['site'])
-            if untagged_vlan is not None:
-                newconfig['untagged_vlan'] = untagged_vlan.id
-            else:
-                success = False
-                error = "unknown untagged vlan"
 
         if 'tagged_vlans' in newconfig:
             tagged = []
