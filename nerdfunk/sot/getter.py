@@ -10,6 +10,7 @@ class Getter(object):
     _sot = None
     _nautobot = None
     _output_format = None
+    _cache = {'site':{}, 'vlan': {} }
 
     def __new__(cls, sot):
         # we use a singleton pattern to ensure we have one
@@ -33,6 +34,42 @@ class Getter(object):
     def open_nautobot(self):
         if self._nautobot is None:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
+
+    def __convert_arguments_to_properties(self, *unnamed, **named):
+        """ converts unnamed (dict) and named arguments to a single property dict """
+        logging.debug("-- entering importer.py/__convert_arguments_to_properties")
+        properties = {}
+        nn = len(unnamed)
+        for param in unnamed:
+            if isinstance(param, dict):
+                for key,value in param.items():
+                    properties[key] = value
+            elif isinstance(param, str):
+                return param
+            else:
+                logging.error(f'cannot use paramater {param} / {type(param)} as value')
+        for key,value in named.items():
+                properties[key] = value
+        
+        return properties
+
+    def _get_vlan(self, vid, site):
+        logging.debug("-- entering sot/getter.py/_get_vlan")
+        logging.debug(f'getting vlan: {vid} / {site}')
+        self.open_nautobot()
+
+        vlans = self._nautobot.ipam.vlans.filter(vid=vid)
+        for vlan in vlans:
+            try:
+                site_name = vlan.site.name
+            except Exception:
+                site_name = None
+
+            if site_name == site:
+                return vlan
+
+        logging.debug("no VLAN found")
+        return None
 
     # -----===== user command =====-----
 
@@ -128,3 +165,42 @@ class Getter(object):
     def hldm(self, **unnamed):
         logging.debug(f'getting HLDM of device {unnamed["device"]} from sot')
         return self.query(name='hldm', query_params={'name': '%s' % unnamed["device"]})
+    
+    def id(self, **named):
+        self.open_nautobot()
+        item = named.get('item')
+        del named['item']
+        logging.debug(f'getting id of {item}; parameter {named}')
+
+        if item == "site":
+            site_name = named.get('name')
+            if site_name in self._cache['site']:
+                logging.debug(f'getting id from cache')
+                return self._cache['site'][site_name]
+            try:
+                site = self._nautobot.dcim.sites.get(**named)
+                if site:
+                    logging.debug(f'adding {site.id} to cache')
+                    self._cache['site'][site_name] = site.id
+                else:
+                    logging.error(f'unknown site {site_name}')
+            except Exception as exc:
+                logging.error(f'got exception {exc}')
+                return None
+        elif item =="vlan":
+            vid = named.get('vid')
+            site_name = named.get('site')
+            id = self._cache['vlan'].get(site_name, {}).get(vid, None)
+            if id:
+                logging.debug(f'using cached id')
+                return id
+            else:
+                vlan = self._get_vlan(vid, site_name)
+                if vlan is None:
+                    return None
+                else:
+                    if site_name not in self._cache['vlan']:
+                        self._cache['vlan'][site_name] = {}
+                    self._cache['vlan'][site_name][vid] = vlan.id
+                    return vlan.id
+        

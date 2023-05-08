@@ -1,6 +1,7 @@
 import logging
 import json
 import re
+import sys
 from . import interfaces
 from . import ipam
 from pynautobot import api
@@ -337,7 +338,14 @@ class Device(object):
                 nb_interface = self._nautobot.dcim.interfaces.create(self._bulk_insert_operation)
                 self._bulk_insert_operation = []
             except Exception as exc:
-                logging.error(f'could not add entity; got exception {exc}')
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                message = "error got exception in line %s: %s (%s, %s, %s)" % (exc_tb.tb_lineno,
+                                                                               exc, exc_type,
+                                                                               exc_obj,
+                                                                               exc_tb)
+                logging.error(f'could not add entity; got exception {message}')
+
+                logging.error("%s" % json.dumps(self._bulk_insert_operation, indent=4))
                 return None
 
     # -----===== attributes =====-----

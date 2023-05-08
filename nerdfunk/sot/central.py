@@ -236,12 +236,12 @@ class Central(object):
 
         # -----===== general methods =====-----
 
-    def _get_vlan(self, name, site):
+    def _get_vlan(self, vid, site):
         logging.debug("-- entering sot/central.py/_get_vlan")
-        logging.debug(f'getting vlan: {name} / {site}')
+        logging.debug(f'getting vlan: {vid} / {site}')
         self.open_nautobot()
 
-        vlans = self._nautobot.ipam.vlans.filter(vid=name)
+        vlans = self._nautobot.ipam.vlans.filter(vid=vid)
         for vlan in vlans:
             try:
                 site_name = vlan.site.name
@@ -276,17 +276,6 @@ class Central(object):
             else:
                 newconfig['location'] = nb_location.id
 
-        if 'tagged_vlans' in newconfig:
-            tagged = []
-            for vlan in newconfig['tagged_vlans'].split(","):
-                tagged_vlan = self._get_vlan(vlan, newconfig['site'])
-                if tagged_vlan is not None:
-                    tagged.append(tagged_vlan.id)
-                else:
-                    success = False
-                    error = "unknown tagged vlan %s" % vlan
-            newconfig['tagged_vlans'] = tagged
-
         if 'serial_number' in newconfig:
             # some devices have more than one serial number
             # the format is {'12345','12345'}
@@ -310,15 +299,5 @@ class Central(object):
                     success = False
                     error = "Unknown tag found in %s (%s)" % (
                         newconfig['tags'], exc)
-
-        # site os needed by other parts; so we convert site after all other
-        # values were converted
-        if 'site' in newconfig:
-            nb_sites = self._nautobot.dcim.sites.get(slug=newconfig['site'])
-            if nb_sites is None:
-                success = False
-                error = 'unknown site "%s"' % newconfig['site']
-            else:
-                newconfig['site'] = nb_sites.id
 
         return success, error

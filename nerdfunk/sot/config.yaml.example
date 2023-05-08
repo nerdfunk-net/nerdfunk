@@ -157,6 +157,23 @@ nautobot:
             }
           }
         }
+        
+    all_vlans_and_sites: >
+        query ($vid: [Int]) {
+          vlans (vid: $vid) {
+            id
+            vid
+            name
+            site {
+              id
+              name
+            }
+          }
+          sites {
+            id
+            name
+          }
+        }
 
     prefixe: >
         query ($prefix: String) {
