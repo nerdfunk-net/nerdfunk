@@ -72,7 +72,7 @@ class Central(object):
         return entity
 
     def add_entity(self, func, properties, convert_id=False):
-        logging.debug(f'-- entering central.py/add_entity_fast')
+        logging.debug(f'-- entering central.py/add_entity')
         if convert_id:
             success, response = self.get_ids(properties)
             if not success:
@@ -85,11 +85,11 @@ class Central(object):
                 logging.debug("entity added to sot")
             else:
                 logging.debug("entity not added to sot")
-            logging.debug(f'-- leaving central.py/add_entity_fast')
+            logging.debug(f'-- leaving central.py/add_entity')
             return item
         except Exception as exc:
             logging.error("entity not added to sot; got exception %s" % exc)
-            logging.debug(f'-- leaving central.py/add_entity_fast')
+            logging.debug(f'-- leaving central.py/add_entity')
             return None
 
     def delete_entity(self, func, title, message, getter):

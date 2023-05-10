@@ -166,6 +166,7 @@ class Device(object):
                     .use_defaults(self._use_defaults) \
                     .get_properties(properties)
                 self._bulk_insert_operation.append(iface_props)
+                return True
             else:
                 # add interface now
                 return self._interfaces[interface] \
