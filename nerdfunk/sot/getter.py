@@ -129,7 +129,7 @@ class Getter(object):
                 logging.debug("device %s not found in sot" % named.get('ip'))
                 return None
 
-        device = self._sot.central.get_entity(self._nautobot.dcim.devices, "Device", getter, getter)
+        device = self._sot.central.get_entity(self._nautobot.dcim.devices, "Device", getter)
 
         if self._output_format == "obj":
             return device

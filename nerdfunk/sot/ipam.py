@@ -339,8 +339,6 @@ class Ipam(object):
 
         return self._sot.central.update_entity(self._nautobot.ipam.ip_addresses,
                                      properties,
-                                     'IP address',
-                                     properties,
                                      {'address': properties.get('address')})
 
     # -----===== PREFIX management =====-----
@@ -392,8 +390,6 @@ class Ipam(object):
 
         # update prefix in nautobot
         return self._sot.central.update_entity(self._nautobot.ipam.prefixes,
-                                     properties,
-                                     'Prefix',
                                      properties,
                                      {'prefix': properties.get('prefix')})
 
@@ -516,8 +512,6 @@ class Ipam(object):
             if vlan.vid == properties.get('vid') and site_name == properties.get('site'):
                 message = {'vid': properties.get('vid'), 'site': properties.get('site')}
                 return self._sot.central.update_entity(self._nautobot.ipam.vlans,
-                                             properties,
-                                             'VLAN',
                                              properties,
                                              {'id': vlan.id})
 

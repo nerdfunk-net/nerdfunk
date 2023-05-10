@@ -20,70 +20,33 @@ class Central(object):
         if self._nautobot is None:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
-    def get_entity(self, func, title, message, getter):
+    def get_entity(self, func, title, getter):
         logging.debug("-- entering sot/central.py/get_entity")
         entity = None
-        message = dict(message)
-        not_found = dict(message)
-        not_found.update({'job': 'update %s' % title,
-                        'success': False,
-                        'log': '%s not found in sot' % title
-                        })
-
-        got_exception = dict(message)
-        got_exception.update({'job': 'update %s' % title,
-                                     'success': False,
-                                     'log': 'error: got exception'
-                            })
-
         try:
             entity = func.get(**getter)
             if entity is None:
-                logging.debug(f'{title} not found in sot')
+                logging.debug(f'entity not found in sot')
                 return None
         except Exception as exc:
             logging.error(f'could not get entity; got exception {exc}')
-            got_exception.update({'exception': exc})
             return None
 
         return entity
 
-    def update_entity(self, func, properties, title, message, getter, convert_id=True):
+    def update_entity(self, func, properties, getter, convert_id=True):
         logging.debug("-- entering sot/central.py/update_entity")
         """
         func: used to get the updates entity
         properties: the new properties of the entity
         """
-        message = dict(message)
-        not_found = dict(message)
-        not_found.update({'job': 'update %s' % title,
-                        'success': False,
-                        'log': '%s not found in sot' % title
-                        })
-        update_successfull = dict(message)
-        update_successfull.update({'job': 'update %s' % title,
-                                'success': True,
-                                'log': '%s updated in sot' % title,
-                                })
-
-        update_not_successfull = dict(message)
-        update_not_successfull.update({'job': 'update %s' % title,
-                                    'success': False,
-                                    'log': '%s not updated in sot' % title,
-                                    })
-
-        got_exception = dict(message)
-        got_exception.update({'job': 'update %s' % title,
-                                    'success': False,
-                                    'log': 'error: got exception'
-                            })
 
         # check if entity is part of sot
         try:
             logging.debug(f'getter: {getter}')
             entity = func.get(**getter)
             if entity is None:
-                logging.debug(f'{title} not found in sot')
+                logging.debug(f'entity not found in sot')
                 return None
         except Exception as exc:
             logging.error(f'could not get entity; got exception {exc}')
@@ -98,12 +61,12 @@ class Central(object):
         try:
             success = entity.update(properties)
             if success:
-                logging.debug("%s updated in sot" % title)
+                logging.debug("entity updated in sot")
             else:
-                logging.debug("%s not updated in sot" % title)
+                logging.debug("entity not updated in sot")
             return entity
         except Exception as exc:
-            logging.error("%s not updated in sot; got exception %s" % (title, exc))
+            logging.error("entity not updated in sot; got exception %s" % exc)
             return None
 
         return entity

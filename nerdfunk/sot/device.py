@@ -80,7 +80,6 @@ class Device(object):
             if self._device_name is not None:
                 self._device_obj = self._sot.central.get_entity(self._nautobot.dcim.devices, 
                                                   "Device", 
-                                                  {'name': self._device_name},
                                                   {'name': self._device_name})
             elif self._device_ip is not None:
                 logging.debug(f'sending query to get device using IP {self._device_ip}')
@@ -297,12 +296,9 @@ class Device(object):
         interface_a = self._get_interface(self._last_requested_interface)
         side_b = self._sot.central.get_entity(self._nautobot.dcim.devices,
                                               "Device",
-                                              {'name': name_of_side_b},
                                               {'name': name_of_side_b})
         interface_b = self._sot.central.get_entity(self._nautobot.dcim.interfaces,
                                               "Interface",
-                                              {'device_id': side_b.id,
-                                               'name': name_of_interface_b},
                                               {'device_id': side_b.id,
                                                'name': name_of_interface_b})
         
@@ -541,9 +537,7 @@ class Device(object):
         for new_tag in new_tags:
             tag = self._sot.central.get_entity(self._nautobot.extras.tags,
                                      "Tag",
-                                     {'name': new_tag},
-                                     {'name': new_tag},
-                                     self._last_request)
+                                     {'name': new_tag})
             if tag is None:
                 logging.error(f'unknown tag {tag}')
                 new_tags.remove(tag)
@@ -551,8 +545,6 @@ class Device(object):
         properties = {'tags': list(new_tags)}
         logging.debug(f'final list of tags {properties}')
         return self._sot.central.update_entity(self._nautobot.dcim.devices,
-                                     properties,
-                                     'Tags',
                                      properties,
                                      {'name': self._device_name})
 
@@ -577,9 +569,7 @@ class Device(object):
         logging.debug(f'new tags {new_device_tags}')
 
         properties = {'tags': list(new_device_tags)}
+        # todo hier noch einmal schauen und testen
         return self._sot.central.update_entity(self._nautobot.extras.tags,
                                      properties,
-                                     'Tags',
-                                     properties,
-                                     {'name': self._device_name},
-                                     self._nautobot.dcim.devices)
+                                     {'name': self._device_name})

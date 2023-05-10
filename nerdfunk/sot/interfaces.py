@@ -143,10 +143,7 @@ class Interface(object):
 
         # check if new tag is known
         for new_tag in new_tags:
-            tag = self._sot.central.get_entity(self._nautobot.extras.tags,
-                                     "Tag",
-                                     {'name': new_tag},
-                                     {'name': new_tag})
+            tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
             if tag is None:
                 logging.error(f'unknown tag {new_tag}')
                 new_tags.remove(new_tag)
@@ -156,8 +153,6 @@ class Interface(object):
         # getter to get the interface; we use the device id!
         getter = {'device_id': self._device.id, 'id': interface.id}
         return self._sot.central.update_entity(self._nautobot.dcim.interfaces,
-                                     properties,
-                                     'Tags',
                                      properties,
                                      getter)
 
@@ -192,7 +187,5 @@ class Interface(object):
         self.open_nautobot()
         return self._sot.central.update_entity(func=self._nautobot.dcim.interfaces,
                                                properties=interface,
-                                               title="Interface",
-                                               message={'name': self._interface_name},
                                                getter={'name': self._interface_name},
                                                convert_id=False)
