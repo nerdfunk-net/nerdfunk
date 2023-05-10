@@ -309,11 +309,7 @@ class Ipam(object):
             properties.update(self._ipv4_defaults)
 
         logging.debug(f'add IP address: {properties}')
-        return self._sot.central.add_entity(self._nautobot.ipam.ip_addresses,
-                                  properties, 'IP',
-                                  {'address': properties['address']},
-                                  {'address': properties['address']},
-                                  self._return_device)
+        return self._sot.central.add_entity(self._nautobot.ipam.ip_addresses, properties, True)
 
     def delete_ipv4(self):
         self.open_nautobot()
@@ -372,11 +368,7 @@ class Ipam(object):
 
         logging.debug(f'add prefix: {properties}')
 
-        return self._sot.central.add_entity(self._nautobot.ipam.prefixes,
-                                  properties, 'prefix',
-                                  {'prefix': properties['prefix']},
-                                  {'prefix': properties['prefix']},
-                                  self._return_device)
+        return self._sot.central.add_entity(self._nautobot.ipam.prefixes, properties, True)
 
     def delete_prefix(self):
         self.open_nautobot()
@@ -465,12 +457,7 @@ class Ipam(object):
             
         if not skip:
             message = {'vid': properties.get('vid'), 'site': properties.get('site')}
-            return self._sot.central.add_entity(self._nautobot.ipam.vlans,
-                                                    properties,
-                                                    "VLAN",
-                                                    message,
-                                                    None,
-                                                    self._return_device)
+            return self._sot.central.add_entity(self._nautobot.ipam.vlans, properties, True)
 
     def delete_vlan(self):
         self.open_nautobot()

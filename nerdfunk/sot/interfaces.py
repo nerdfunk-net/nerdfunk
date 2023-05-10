@@ -184,16 +184,7 @@ class Interface(object):
     def __add_interface(self, interface):
         logging.debug("-- entering sot/interfaces.py.py/__add_interface")
         self.open_nautobot()
-        print(interface)
-        # return self._sot.central.add_entity(func=self._nautobot.dcim.interfaces,
-        #                                     properties=interface,
-        #                                     title="Interface",
-        #                                     message={'name': self._interface_name},
-        #                                     getter={'name': self._interface_name},
-        #                                     return_entity=self._return_interface,
-        #                                     convert_id=False)
-
-        return self._sot.central.add_entity_fast(func=self._nautobot.dcim.interfaces,
+        return self._sot.central.add_entity(func=self._nautobot.dcim.interfaces,
                                             properties=interface)
 
     def __update_interface(self, interface):

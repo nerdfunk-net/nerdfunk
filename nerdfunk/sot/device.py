@@ -27,10 +27,10 @@ class Device(object):
     _device_properties = {}
     _device_mandatory_properties = ['device_type', 'device_role',
                                     'platform', 'serial', 'site', 'status']
-    _device_default_values = {'device_type': 'default_type',
-                              'device_role': 'default_role',
-                              'platform': 'ios',
-                              'site': 'default_site',
+    _device_default_values = {'device_type': {'slug':'default_type'},
+                              'device_role': {'slug': 'default_role'},
+                              'platform': {'slug': 'ios'},
+                              'site': {'name': 'default_site'},
                               'status': 'active'}
 
     # dict of all interfaces of the device
@@ -316,12 +316,7 @@ class Device(object):
                 'type': 'cat5e',
                 'status': 'connected'
             }
-            success = self._sot.central.add_entity(self._nautobot.dcim.cables,
-                                                   cable,
-                                                   "Cable",
-                                                   cable,
-                                                   None,
-                                                   False)
+            success = self._sot.central.add_entity(self._nautobot.dcim.cables, cable)
 
             if success:
                 logging.debug(f'connection created successfully')
@@ -439,12 +434,7 @@ class Device(object):
                     return False
 
         device_properties['name'] = self._device_name
-        nb_device = self._sot.central.add_entity(self._nautobot.dcim.devices, 
-                                    device_properties, 
-                                    "Device", 
-                                    {'name': self._device_name},
-                                    {'name': self._device_name},
-                                    self._return_device)
+        nb_device = self._sot.central.add_entity(self._nautobot.dcim.devices, device_properties)
         if nb_device is None:
             logging.error(f'could not add device {self._device_name} to SOT')
             logging.debug(f'-- leaving device.py/add_device')
@@ -457,7 +447,7 @@ class Device(object):
             primary_interface = interface \
                 .set_device(nb_device) \
                 .use_defaults(True) \
-                .add(self._primary_interface_properties)
+                .add({'name': self._primary_interface_properties})
 
             if primary_interface is None:
                 logging.error("creating interface failed")

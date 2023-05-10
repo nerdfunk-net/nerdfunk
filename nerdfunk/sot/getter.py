@@ -73,6 +73,31 @@ class Getter(object):
 
     # -----===== user command =====-----
 
+    def load_cache(self):
+        vlans_and_sites = self.query(name='all_vlans_and_sites', 
+                                output_format='dict',
+                                query_params={})
+
+        for vlan in vlans_and_sites['data']['vlans']:
+            site = vlan.get('site')
+            if site:
+                site_name = site['name']
+            else:
+                site_name = None
+            vlan_vid = vlan['vid']
+            vlan_name = vlan['name']
+            vlan_id = vlan['id']
+            if site_name not in self._cache['vlan']:
+                self._cache['vlan'][site_name] = {}
+            self._cache['vlan'][site_name][vlan_vid] = vlan_id
+
+        for site in vlans_and_sites['data']['sites']:
+            site_name = site.get('name')
+            site_id = site.get('id')
+            if site_name not in self._cache['site']:
+                self._cache['site'][site_name] = {}
+            self._cache['site'][site_name] = site_id
+
     def file(self, *unnamed, **named):
         logging.debug(f'-- entering getter.py/file')
         properties = dict(named)
@@ -153,11 +178,16 @@ class Getter(object):
         self.open_nautobot()
         response = self._nautobot.graphql.query(query=query, variables=query_params).json
         
-        if self._output_format == "obj":
+        if 'output_format' in unnamed:
+            output_format = unnamed.get('output_format')
+        else:
+            output_format = self._output_format
+
+        if output_format == "obj":
             return response
-        elif self._output_format == "dict":
+        elif output_format == "dict":
             return dict(response)
-        elif self._output_format == "json":
+        elif output_format == "json":
             return json.dumps(response)
         else:
             return response
@@ -182,6 +212,7 @@ class Getter(object):
                 if site:
                     logging.debug(f'adding {site.id} to cache')
                     self._cache['site'][site_name] = site.id
+                    return site.id
                 else:
                     logging.error(f'unknown site {site_name}')
             except Exception as exc:
@@ -203,4 +234,3 @@ class Getter(object):
                         self._cache['vlan'][site_name] = {}
                     self._cache['vlan'][site_name][vid] = vlan.id
                     return vlan.id
-        

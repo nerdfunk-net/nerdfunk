@@ -108,45 +108,8 @@ class Central(object):
 
         return entity
 
-    def add_entity(self, func, properties, title, message, getter, return_entity = True, convert_id=True):
-        logging.debug(f'-- entering central.py/add_entity')
-        message = dict(message)
-        already_in_sot = dict(message)
-        already_in_sot.update({'job': 'add %s' % title,
-                               'success': False,
-                               'log': '%s already in sot' % title
-                               })
-        addition_successfull = dict(message)
-        addition_successfull.update({'job': 'added %s' % title,
-                                     'success': True,
-                                     'log': '%s added to sot' % title,
-                                     })
-
-        addition_not_successfull = dict(message)
-        addition_not_successfull.update({'job': 'added %s' % title,
-                                         'success': False,
-                                         'log': '%s not added to sot' % title,
-                                         })
-
-        got_exception = dict(message)
-        got_exception.update({'job': 'added %s' % title,
-                              'success': False,
-                              'log': 'error: got exception'
-                              })
-
-        # add entity to sot
-        if getter is not None:
-            logging.debug(f'getter function: {getter}')
-            entity = func.get(**getter)
-            if entity is not None:
-                logging.debug(f'{title} already in sot')
-                if return_entity:
-                    logging.debug(f'-- leaving central.py/add_entity')
-                    return entity
-                else:
-                    logging.debug(f'-- leaving central.py/add_entity')
-                    return None
-
+    def add_entity(self, func, properties, convert_id=False):
+        logging.debug(f'-- entering central.py/add_entity_fast')
         if convert_id:
             success, response = self.get_ids(properties)
             if not success:
@@ -156,23 +119,6 @@ class Central(object):
         try:
             item = func.create(properties)
             if item:
-                logging.debug("%s added to sot" % title)
-            else:
-                logging.debug("%s not added to sot" % title)
-            logging.debug(f'-- leaving central.py/add_entity')
-            return item
-        except Exception as exc:
-            logging.error("%s not added to sot; got exception %s" % (title, exc))
-            got_exception.update({'exception': exc})
-            logging.debug(f'-- leaving central.py/add_entity')
-            return None
-
-    def add_entity_fast(self, func, properties):
-        logging.debug(f'-- entering central.py/add_entity_fast')
-        try:
-            print(properties)
-            item = func.create(properties)
-            if item:
                 logging.debug("entity added to sot")
             else:
                 logging.debug("entity not added to sot")
@@ -180,7 +126,6 @@ class Central(object):
             return item
         except Exception as exc:
             logging.error("entity not added to sot; got exception %s" % exc)
-            got_exception.update({'exception': exc})
             logging.debug(f'-- leaving central.py/add_entity_fast')
             return None
 

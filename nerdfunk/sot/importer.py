@@ -62,12 +62,7 @@ class Importer(object):
                 getter = {'site': item.get('slsiteug')}
             else:
                 getter = None
-            success = self._sot.central.add_entity(creator,
-                                                   item,
-                                                   title,
-                                                   item,
-                                                   getter,
-                                                   True)
+            success = self._sot.central.add_entity(creator, item)
             if success:
                 logging.info(f'{title} successfully added to sot')
             else:
