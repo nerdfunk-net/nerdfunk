@@ -12,7 +12,7 @@ from . import central
 from . import git
 
 
-class Device(object):
+class Device:
     _last_attribute = None
     _sot = None
     _todos = {}
@@ -65,7 +65,7 @@ class Device(object):
             self._device_ip = device_or_ip
         else:
             self._device_name = device_or_ip
-
+        self._bulk_insert_operation = []
     # internal method 
 
     def open_nautobot(self):
@@ -330,13 +330,12 @@ class Device(object):
                 nb_interface = self._nautobot.dcim.interfaces.create(self._bulk_insert_operation)
                 self._bulk_insert_operation = []
             except Exception as exc:
-                exc_type, exc_obj, exc_tb = sys.exc_info()
-                message = "error got exception in line %s: %s (%s, %s, %s)" % (exc_tb.tb_lineno,
-                                                                               exc, exc_type,
-                                                                               exc_obj,
-                                                                               exc_tb)
-                logging.error(f'could not add entity; got exception {message}')
-
+                # exc_type, exc_obj, exc_tb = sys.exc_info()
+                # message = "error got exception in line %s: %s (%s, %s, %s)" % (exc_tb.tb_lineno,
+                #                                                                exc, exc_type,
+                #                                                                exc_obj,
+                #                                                                exc_tb)
+                logging.error(f'could not add entity; got exception {exc}')
                 logging.error("%s" % json.dumps(self._bulk_insert_operation, indent=4))
                 return None
 
@@ -444,7 +443,8 @@ class Device(object):
             primary_interface = interface \
                 .set_device(nb_device) \
                 .use_defaults(True) \
-                .add({'name': self._primary_interface_properties})
+                .add(self._primary_interface_properties)
+                #.add({'name': self._primary_interface_properties})
 
             if primary_interface is None:
                 logging.error("creating interface failed")

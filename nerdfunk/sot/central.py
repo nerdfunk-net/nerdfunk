@@ -50,7 +50,6 @@ class Central(object):
                 return None
         except Exception as exc:
             logging.error(f'could not get entity; got exception {exc}')
-            got_exception.update({'exception': exc})
             return None
 
         if convert_id:
@@ -89,6 +88,7 @@ class Central(object):
             return item
         except Exception as exc:
             logging.error("entity not added to sot; got exception %s" % exc)
+            logging.error(f'properties: {properties}')
             logging.debug(f'-- leaving central.py/add_entity')
             return None
 

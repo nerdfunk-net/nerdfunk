@@ -5,7 +5,7 @@ from pynautobot.models.dcim import Devices
 from pynautobot.models.dcim import Interfaces
 
 
-class Interface(object):
+class Interface:
     _sot = None
     _last_attribute = None
     _device = None

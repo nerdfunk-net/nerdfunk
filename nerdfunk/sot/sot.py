@@ -25,25 +25,16 @@ class Sot:
     __central = None
     _sot_config = None
 
-    def __new__(cls, **named):
+    def __init__(self, **named):
         if 'filename' in named:
             filename = named['filename']
             del named['filename']
         else:
             filename = DEFAULT_FILENAME
-        
-        # we use a singleton pattern to ensure we have one
-        # onboarding instance and not more
-        if cls._instance is None:
-            logging.debug(f'Creating SOT object')
-            cls._instance = super(Sot, cls).__new__(cls)
             # read SOT config
             logging.debug("reading config %s/%s" % (BASEDIR, filename))
-            cls._sot_config = misc.read_config("%s/%s" % (BASEDIR, filename))
-            cls._sot_config['nautobot'].update(named)
-            # print(json.dumps(cls._sot_config, indent=4))
-                
-        return cls._instance
+            self._sot_config = misc.read_config("%s/%s" % (BASEDIR, filename))
+            self._sot_config['nautobot'].update(named)
 
     def __getattr__(self, item):
         if item == "ipam":

@@ -134,7 +134,10 @@ class Getter(object):
         if self._output_format == "obj":
             return device
         elif self._output_format == "dict":
-            return dict(device)
+            if device:
+                return dict(device)
+            else:
+                return {}
         elif self._output_format == "json":
             return json.dumps(device)
         else:
