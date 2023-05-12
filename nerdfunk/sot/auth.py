@@ -5,13 +5,13 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 class Auth(object):
-    _sot = None
-    _encryption_key_ascii = None
+
     _iterations = 390000
-    _salt_bytes = None
 
     def __init__(self, sot, **named):
         logging.debug(f'Creating AUTH object;')
+        self._encryption_key_ascii = None
+        self._salt_bytes = None
         self._sot = sot
         if 'encryption_key' in named:
             self._encryption_key_ascii = named['encryption_key']

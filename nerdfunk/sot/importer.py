@@ -6,11 +6,10 @@ from pynautobot import api
 
 
 class Importer(object):
-    _sot = None
-    _nautobot = None
 
     def __init__(self, sot):
         logging.debug(f'Creating IMPORTER object;')
+        self._nautobot = None
         self._sot = sot
 
     def __getattr__(self, item):

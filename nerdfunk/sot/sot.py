@@ -12,28 +12,30 @@ from ..utilities import misc
 from dotenv import load_dotenv, dotenv_values
 
 
-BASEDIR = os.path.abspath(os.path.dirname(__file__))
-DEFAULT_FILENAME = "./config.yaml"
-
 class Sot:
-    _instance = None
-    __devices = {}
-    __ipam = None
-    __getter = None
-    __importer = None
-    __auth = None
-    __central = None
-    _sot_config = None
+
+    BASEDIR = os.path.abspath(os.path.dirname(__file__))
+    DEFAULT_FILENAME = "./config.yaml"
 
     def __init__(self, **named):
+        # initialize variables
+        self._instance = None
+        self.__devices = {}
+        self.__ipam = None
+        self.__getter = None
+        self.__importer = None
+        self.__auth = None
+        self.__central = None
+        self._sot_config = None
+
         if 'filename' in named:
             filename = named['filename']
             del named['filename']
         else:
-            filename = DEFAULT_FILENAME
+            filename = self.DEFAULT_FILENAME
             # read SOT config
-            logging.debug("reading config %s/%s" % (BASEDIR, filename))
-            self._sot_config = misc.read_config("%s/%s" % (BASEDIR, filename))
+            logging.debug("reading config %s/%s" % (self.BASEDIR, filename))
+            self._sot_config = misc.read_config("%s/%s" % (self.BASEDIR, filename))
             self._sot_config['nautobot'].update(named)
 
     def __getattr__(self, item):
@@ -77,7 +79,7 @@ class Sot:
         # Get the path to the directory this file is in
         BASEDIR = os.path.abspath(os.path.dirname(__file__))
         # Connect the path with the '.env' file name
-        load_dotenv(os.path.join(BASEDIR, '.env'))
+        load_dotenv(os.path.join(self.BASEDIR, '.env'))
 
         salt = named.get('salt')
         if salt is None:

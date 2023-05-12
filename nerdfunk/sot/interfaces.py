@@ -6,34 +6,36 @@ from pynautobot.models.dcim import Interfaces
 
 
 class Interface:
-    _sot = None
-    _last_attribute = None
-    _device = None
-    _todos = {}
-    _use_defaults = False
-    _return_interface = True
-    _bulk = False
 
-    # interface properties
-    _interface_name = None
-    _interface_obj = None
-    _interface_properties = {}
+    # constant values
     _interface_mandatory_properties = ['name', 'description', 'status', 'type']
-    _interface_default_values = {'description':'',
+    _interface_default_values = {'description': '',
                                  'status': 'active',
                                  'type': '1000base-t'}
-
-    # connection to nautobot
-    _nautobot = None
-
-    # tags
-    _interface_tags = []
-    _tags_to_delete = set()
-    _tags_to_add = set()
 
     def __init__(self, interface_name, sot, device=None):
         logging.debug("-- entering sot/interfaces.py.py/__init__")
         logging.debug(f'initializing interface {interface_name} on {device}')
+        # init variables
+        self._last_attribute = None
+        self._todos = {}
+        self._use_defaults = False
+        self._return_interface = True
+        self._bulk = False
+
+        # interface properties
+        self._interface_name = None
+        self._interface_obj = None
+        self._interface_properties = {}
+
+        # connection to nautobot
+        self._nautobot = None
+
+        # tags
+        self._interface_tags = []
+        self._tags_to_delete = set()
+        self._tags_to_add = set()
+
         self._interface_name = interface_name
         self._sot = sot
         self._device = device

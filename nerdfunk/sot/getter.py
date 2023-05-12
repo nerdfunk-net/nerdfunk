@@ -6,15 +6,19 @@ from . import git
 
 
 class Getter(object):
-    _instance = None
-    _sot = None
-    _nautobot = None
-    _output_format = None
-    _cache = {'site':{}, 'vlan': {} }
+
+    scope_id_to_name = {'3': 'dcim.device',
+                        '4': 'dcim.interface',
+                        '11': 'ipam.prefix'}
 
     def __new__(cls, sot):
-        # we use a singleton pattern to ensure we have one
-        # onboarding instance and not more
+        cls._instance = None
+        cls._sot = None
+        cls._nautobot = None
+        cls._output_format = None
+        cls._cache = {'site':{}, 'vlan': {}, 'tag': {} }
+
+        # singleton
         if cls._instance is None:
             logging.debug(f'Creating GETTER object')
             cls._instance = super(Getter, cls).__new__(cls)
@@ -74,9 +78,25 @@ class Getter(object):
     # -----===== user command =====-----
 
     def load_cache(self):
+        all_tags = self.query(name='all_tags', 
+                                output_format='dict',
+                                query_params={})
         vlans_and_sites = self.query(name='all_vlans_and_sites', 
                                 output_format='dict',
                                 query_params={})
+
+        for tag in all_tags['data']['tags']:
+            slug = tag['slug']
+            tag_id = tag['id']
+            scopes = tag['content_types']
+            for scope in scopes:
+                scope_id = scope['id']
+                # scope_id: 4 interface
+                # scope_id: 3 device
+                scope_name = self.scope_id_to_name.get(scope_id, scope_id)
+                if scope_name not in self._cache['tag']:
+                    self._cache['tag'][scope_name] = {}
+                self._cache['tag'][scope_name][slug] = tag_id
 
         for vlan in vlans_and_sites['data']['vlans']:
             site = vlan.get('site')
@@ -237,3 +257,21 @@ class Getter(object):
                         self._cache['vlan'][site_name] = {}
                     self._cache['vlan'][site_name][vid] = vlan.id
                     return vlan.id
+        elif item =="tag":
+            slug = named.get('slug')
+            content_types = named.get('content_types')
+            id = self._cache['tag'].get(content_types, {}).get(slug, None)
+            if id:
+                logging.debug(f'using cached id')
+                return id
+            try:
+                tag = self._nautobot.extras.tags.get(**named)
+                if tag:
+                    logging.debug(f'adding {content_types} {tag.id} to cache')
+                    self._cache['tag'][content_types] = tag.id
+                    return tag.id
+                else:
+                    logging.error(f'unknown tag {slug}')
+            except Exception as exc:
+                logging.error(f'got exception {exc}')
+                return None

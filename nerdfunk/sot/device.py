@@ -13,51 +13,53 @@ from . import git
 
 
 class Device:
-    _last_attribute = None
-    _sot = None
-    _todos = {}
-    _use_defaults = False
-    _return_device = True
-    _bulk = False
-
-    # device properties
-    _device_name = None
-    _device_obj = None
-    _device_ip = None
-    _device_properties = {}
+ 
+    # constant values
     _device_mandatory_properties = ['device_type', 'device_role',
                                     'platform', 'serial', 'site', 'status']
-    _device_default_values = {'device_type': {'slug':'default_type'},
+    _device_default_values = {'device_type': {'slug': 'default_type'},
                               'device_role': {'slug': 'default_role'},
                               'platform': {'slug': 'ios'},
                               'site': {'name': 'default_site'},
                               'status': 'active'}
-
-    # dict of all interfaces of the device
-    _interfaces = {}
-    _interface_defaults = {}
-    _bulk_insert_operation = []
-
-    # tags
-    _device_tags = []
-
-    _primary_ipv4 = None
-    _primary_interface = None
-    _primary_interface_properties = None
-    _make_interface_primary = None
-    _last_request = None
-    _last_requested_interface = None
-    _last_requested_tags = None
-
-    # connection to nautobot
-    _nautobot = None
-
     # regex
     _REGEX_IPV4 = r"^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$"
 
     def __init__(self, sot, device_or_ip):
         logging.debug("-- entering sot/device.py.py/__init__")
         logging.debug(f'initializing device {device_or_ip} (device.py)')
+
+        # init variables
+        self._last_attribute = None
+        self._todos = {}
+        self._use_defaults = False
+        self._return_device = True
+        self._bulk = False
+
+        # device properties
+        self._device_name = None
+        self._device_obj = None
+        self._device_ip = None
+        self._device_properties = {}
+
+        # dict of all interfaces of the device
+        self._interfaces = {}
+        self._interface_defaults = {}
+        self._bulk_insert_operation = []
+
+        # tags
+        self._device_tags = []
+
+        self._primary_ipv4 = None
+        self._primary_interface = None
+        self._primary_interface_properties = None
+        self._make_interface_primary = None
+        self._last_request = None
+        self._last_requested_interface = None
+        self._last_requested_tags = None
+
+        # connection to nautobot
+        self._nautobot = None
         self._sot = sot
         # check if device_or_ip is IP or name:
         if re.match(self._REGEX_IPV4, device_or_ip):

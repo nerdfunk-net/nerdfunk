@@ -9,53 +9,53 @@ from . import central
 
 
 class Ipam(object):
-    _instance = None
-    _last_attribute = None
-    _sot = None
-    _todos = {}
-    _use_defaults = False
-    _return_device = True
-    _add_missing_ip = False
-
-    _new_ipv4 = []
-    _ipv4 = {'address': None, 'status': None}
-    _ipv4_assignment = {'device': None,
-                        'interface': None,
-                        'interface_type': None,
-                        'description': None}
-
-    _ipv4_assignments = []
-    _ipv4_defaults = {'status': 'active'}
-
-    _vlan_defaults = {}
-    _prefix_defaults = {}
-
-    _last_request = None
-    _last_requested_ipv4 = None
-    _last_requested_vlan = None
-    _last_requested_prefix =  None
-    _last_requested_site =  None
-
-    # bulk operations
-    _bulk = False
-    _bulk_insert_ipv4_operation = []
-    _bulk_insert_prefixe_operation = []
-    _bulk_insert_vlan_operation = []
-
-    # ip address to assign an interface
-    _ipv4_assign_address = None
-    _make_interface_primary = None
-
-    # device or interface eg we assign an address to
-    # device and interface is either a Device/Interface obj or a str
-    _device = None
-    _interface = None
-    _site = None
-
-    # connection to nautobot
-    _nautobot = None
 
     def __new__(cls, sot):
+        cls._instance = None
+        cls._last_attribute = None
+        cls._sot = None
+        cls._todos = {}
+        cls._use_defaults = False
+        cls._return_device = True
+        cls._add_missing_ip = False
+
+        cls._new_ipv4 = []
+        cls._ipv4 = {'address': None, 'status': None}
+        cls._ipv4_assignment = {'device': None,
+                            'interface': None,
+                            'interface_type': None,
+                            'description': None}
+
+        cls._ipv4_assignments = []
+        cls._ipv4_defaults = {'status': 'active'}
+
+        cls._vlan_defaults = {}
+        cls._prefix_defaults = {}
+
+        cls._last_request = None
+        cls._last_requested_ipv4 = None
+        cls._last_requested_vlan = None
+        cls._last_requested_prefix =  None
+        cls._last_requested_site =  None
+
+        # bulk operations
+        cls._bulk = False
+        cls._bulk_insert_ipv4_operation = []
+        cls._bulk_insert_prefixe_operation = []
+        cls._bulk_insert_vlan_operation = []
+
+        # ip address to assign an interface
+        cls._ipv4_assign_address = None
+        cls._make_interface_primary = None
+
+        # device or interface eg we assign an address to
+        # device and interface is either a Device/Interface obj or a str
+        cls._device = None
+        cls._interface = None
+        cls._site = None
+
+        # connection to nautobot
+        cls._nautobot = None
         # todo: check if we should use a singleton
         # we use a singleton pattern to ensure we have one
         # onboarding instance and not more
@@ -64,6 +64,7 @@ class Ipam(object):
             cls._instance = super(Ipam, cls).__new__(cls)
             # Put any initialization here
             cls._sot = sot
+
         return cls._instance
 
     # internal method 

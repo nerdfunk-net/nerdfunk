@@ -9,11 +9,9 @@ from pynautobot.core.response import Record
 
 class Central(object):
 
-    _sot = None
-    _nautobot = None
-
     def __init__(self, sot):
         logging.debug(f'initializing central')
+        self._nautobot = None
         self._sot = sot
 
     def open_nautobot(self):
@@ -193,19 +191,19 @@ class Central(object):
                 .replace("{", "") \
                 .replace("}", "")
 
-        if 'tags' in newconfig:
-            if newconfig['tags'] == "":
-                newconfig['tags'] = []
-            else:
-                try:
-                    if isinstance(newconfig['tags'], str):
-                        newconfig['tags'] = [self._nautobot.extras.tags.get(name=tag).id for tag in newconfig["tags"].split(',')]
-                    else:
-                        # list
-                        newconfig['tags'] = [self._nautobot.extras.tags.get(name=tag).id for tag in newconfig["tags"]]
-                except Exception as exc:
-                    success = False
-                    error = "Unknown tag found in %s (%s)" % (
-                        newconfig['tags'], exc)
+        # if 'tags' in newconfig:
+        #     if newconfig['tags'] == "":
+        #         newconfig['tags'] = []
+        #     else:
+        #         try:
+        #             if isinstance(newconfig['tags'], str):
+        #                 newconfig['tags'] = [self._nautobot.extras.tags.get(name=tag).id for tag in newconfig["tags"].split(',')]
+        #             else:
+        #                 # list
+        #                 newconfig['tags'] = [self._nautobot.extras.tags.get(name=tag).id for tag in newconfig["tags"]]
+        #         except Exception as exc:
+        #             success = False
+        #             error = "Unknown tag found in %s (%s)" % (
+        #                 newconfig['tags'], exc)
 
         return success, error

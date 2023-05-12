@@ -175,6 +175,17 @@ nautobot:
           }
         }
 
+    all_tags: >
+        query ($slug: [String]) {
+          tags (slug: $slug) {
+            id
+            slug
+            content_types {
+              id
+            }
+          }
+        }
+
     prefixe: >
         query ($prefix: String) {
           prefixes (within_include: $prefix) {
