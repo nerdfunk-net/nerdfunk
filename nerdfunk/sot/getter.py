@@ -41,17 +41,18 @@ class Getter(object):
 
     def __convert_arguments_to_properties(self, *unnamed, **named):
         """ converts unnamed (dict) and named arguments to a single property dict """
-        logging.debug("-- entering importer.py/__convert_arguments_to_properties")
         properties = {}
-        nn = len(unnamed)
-        for param in unnamed:
-            if isinstance(param, dict):
-                for key,value in param.items():
-                    properties[key] = value
-            elif isinstance(param, str):
-                return param
-            else:
-                logging.error(f'cannot use paramater {param} / {type(param)} as value')
+        if len(unnamed) > 0:
+            for param in unnamed:
+                print(param)
+                if isinstance(param, dict):
+                    for key,value in param.items():
+                        properties[key] = value
+                elif isinstance(param, str):
+                    # it is just a text like log('something to log')
+                    return param
+                else:
+                    logging.error(f'cannot use paramater {param} / {type(param)} as value')
         for key,value in named.items():
                 properties[key] = value
         
@@ -223,6 +224,7 @@ class Getter(object):
         self.open_nautobot()
         item = named.get('item')
         del named['item']
+        logging.debug(f'-- entering getter.py/id')
         logging.debug(f'getting id of {item}; parameter {named}')
 
         if item == "site":
@@ -275,3 +277,25 @@ class Getter(object):
             except Exception as exc:
                 logging.error(f'got exception {exc}')
                 return None
+
+    def changes(self, *unnamed, **named):
+        logging.debug(f'-- entering getter.py/changes')
+        self.open_nautobot()
+
+        properties = self.__convert_arguments_to_properties(unnamed, named)
+        if 'start' in properties:
+            properties['gt'] = properties.pop('start')
+        if 'end' in properties:
+            properties['lt'] = properties.pop('end')
+        
+        changes = self.query(name='changes', query_params=properties)
+
+        if 'context_pattern' in properties:
+            data = []
+            search = properties.get('context_pattern','')
+            for change in changes['data'].get('object_changes'):
+                if search in change.get('change_context_detail'):
+                    data.append(change)
+            return data
+        else:
+            return changes['data'].get('object_changes')

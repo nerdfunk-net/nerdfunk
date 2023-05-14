@@ -186,6 +186,17 @@ nautobot:
           }
         }
 
+    changes: >
+        query ($gt: [String], $lt: [String], $action: String) {
+            object_changes (time__gt: $gt, time__lt: $lt, action: $action) {
+              time
+              user_name
+              action
+              changed_object_id
+              change_context_detail
+            }
+        }
+
     prefixe: >
         query ($prefix: String) {
           prefixes (within_include: $prefix) {

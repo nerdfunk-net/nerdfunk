@@ -57,20 +57,21 @@ class Interface:
 
     def __convert_arguments_to_properties(self, *unnamed, **named):
         """ converts unnamed (dict) and named arguments to a single property dict """
-        logging.debug("-- entering interfaces.py/__convert_arguments_to_properties")
         properties = {}
-        nn = len(unnamed)
-        for param in unnamed:
-            if isinstance(param, dict):
-                for key,value in param.items():
-                    properties[key] = value
-            elif isinstance(param, str):
-                return param
-            else:
-                logging.error(f'cannot use paramater {param} / {type(param)} as value')
+        if len(unnamed) > 0:
+            for param in unnamed:
+                print(param)
+                if isinstance(param, dict):
+                    for key,value in param.items():
+                        properties[key] = value
+                elif isinstance(param, str):
+                    # it is just a text like log('something to log')
+                    return param
+                else:
+                    logging.error(f'cannot use paramater {param} / {type(param)} as value')
         for key,value in named.items():
                 properties[key] = value
-        logging.debug("-- leaving interfaces.py/__convert_arguments_to_properties")
+        
         return properties
 
     # -----===== user commands =====----- 
