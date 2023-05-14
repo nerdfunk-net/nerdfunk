@@ -436,9 +436,11 @@ class Device:
         nb_device = self._sot.central.add_entity(self._nautobot.dcim.devices, device_properties)
         if nb_device is None:
             logging.error(f'could not add device {self._device_name} to SOT')
+            self._sot.log(device=self._device_name, log='could not add device to SOT')
             logging.debug(f'-- leaving device.py/add_device')
             return None
 
+        self._sot.log(device=self._device_name, log='device added to SOT')
         # check if we have to add a primary interface
         if self._primary_interface:
             logging.debug("adding primary interface %s" % self._primary_interface)
@@ -447,10 +449,10 @@ class Device:
                 .set_device(nb_device) \
                 .use_defaults(True) \
                 .add(self._primary_interface_properties)
-                #.add({'name': self._primary_interface_properties})
 
             if primary_interface is None:
                 logging.error("creating interface failed")
+                self._sot.log(device=self._device_name, log='could not create primary interface')
                 logging.debug(f'-- leaving device.py/add_device')
                 return nb_device
 
@@ -485,6 +487,8 @@ class Device:
                     logging.debug(f'-- leaving device.py/add_device')
                     return None
                 else:
+                    self._sot.log(device=self._device_name, 
+                                  log=f'added {self._primary_ipv4} to SOT and make {primary_interface} primary')
                     logging.debug('successfully marked interface as primary')
     
         logging.debug(f'-- leaving device.py/add_device')
