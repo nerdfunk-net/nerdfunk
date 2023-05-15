@@ -60,7 +60,6 @@ class Interface:
         properties = {}
         if len(unnamed) > 0:
             for param in unnamed:
-                print(param)
                 if isinstance(param, dict):
                     for key,value in param.items():
                         properties[key] = value
