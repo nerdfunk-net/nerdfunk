@@ -191,19 +191,4 @@ class Central(object):
                 .replace("{", "") \
                 .replace("}", "")
 
-        # if 'tags' in newconfig:
-        #     if newconfig['tags'] == "":
-        #         newconfig['tags'] = []
-        #     else:
-        #         try:
-        #             if isinstance(newconfig['tags'], str):
-        #                 newconfig['tags'] = [self._nautobot.extras.tags.get(name=tag).id for tag in newconfig["tags"].split(',')]
-        #             else:
-        #                 # list
-        #                 newconfig['tags'] = [self._nautobot.extras.tags.get(name=tag).id for tag in newconfig["tags"]]
-        #         except Exception as exc:
-        #             success = False
-        #             error = "Unknown tag found in %s (%s)" % (
-        #                 newconfig['tags'], exc)
-
         return success, error

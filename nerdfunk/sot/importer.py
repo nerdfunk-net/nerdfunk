@@ -50,22 +50,23 @@ class Importer(object):
                 return None
         return content
 
-    def import_data(self, data, title, creator):
+    def import_data(self, data, title, creator, bulk=False):
         logging.debug("-- entering importer.py/import_data")
         self.open_nautobot()
 
-        for item in data:
-            if 'slug' in item:
-                getter = {'slug': item.get('slug')}
-            elif 'site' in item:
-                getter = {'site': item.get('slsiteug')}
-            else:
-                getter = None
-            success = self._sot.central.add_entity(creator, item)
+        if bulk:
+            success = self._sot.central.add_entity(creator, data)
             if success:
                 logging.info(f'{title} successfully added to sot')
             else:
                 logging.error(f'could not add {title} to sot')
+        else:
+            for item in data:
+                success = self._sot.central.add_entity(creator, item)
+                if success:
+                    logging.info(f'{title} successfully added to sot')
+                else:
+                    logging.error(f'could not add {title} to sot')
 
     # -----===== user commands =====----- 
 
@@ -149,13 +150,19 @@ class Importer(object):
     def locations(self, *unnamed, **named):
         logging.debug("-- entering importer.py/locations")
         self.open_nautobot()
+        bulk = False
+
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
+        if 'bulk' in named:
+            bulk = named.get('bulk')
+            del named['bulk']
 
         if 'file' in properties:
             content = self.open_file(properties['file'])
             self.import_data(content['locations'], "locations", self._nautobot.dcim.locations)
         elif 'properties' in properties:
-            self.import_data(properties['properties'], "locations", self._nautobot.dcim.locations)
+            self.import_data(properties['properties'], "locations", self._nautobot.dcim.locations, bulk)
 
     def tags(self, *unnamed, **named):
         logging.debug("-- entering importer.py/tags")
