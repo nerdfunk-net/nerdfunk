@@ -134,3 +134,47 @@ class Importer(object):
             self.import_data(content['device_types'], "device_types", self._nautobot.dcim.device_types)
         elif 'properties' in properties:
             self.import_data(properties['properties'], "device_types", self._nautobot.dcim.device_types)
+
+    def location_types(self, *unnamed, **named):
+        logging.debug("-- entering importer.py/location_types")
+        self.open_nautobot()
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
+        if 'file' in properties:
+            content = self.open_file(properties['file'])
+            self.import_data(content['location_types'], "location_types", self._nautobot.dcim.location_types)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "location_types", self._nautobot.dcim.location_types)
+
+    def locations(self, *unnamed, **named):
+        logging.debug("-- entering importer.py/locations")
+        self.open_nautobot()
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
+        if 'file' in properties:
+            content = self.open_file(properties['file'])
+            self.import_data(content['locations'], "locations", self._nautobot.dcim.locations)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "locations", self._nautobot.dcim.locations)
+
+    def tags(self, *unnamed, **named):
+        logging.debug("-- entering importer.py/tags")
+        self.open_nautobot()
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
+        if 'file' in properties:
+            content = self.open_file(properties['file'])
+            self.import_data(content['tags'], "tags", self._nautobot.extras.tags)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "tags", self._nautobot.extras.tags)
+
+    def webhooks(self, *unnamed, **named):
+        logging.debug("-- entering importer.py/webhooks")
+        self.open_nautobot()
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
+        if 'file' in properties:
+            content = self.open_file(properties['file'])
+            self.import_data(content['webhooks'], "webhooks", self._nautobot.extras.webhooks)
+        elif 'properties' in properties:
+            self.import_data(properties['properties'], "webhooks", self._nautobot.extras.webhooks)

@@ -17,10 +17,10 @@ class Device:
     # constant values
     _device_mandatory_properties = ['device_type', 'device_role',
                                     'platform', 'serial', 'site', 'status']
-    _device_default_values = {'device_type': {'slug': 'default_type'},
-                              'device_role': {'slug': 'default_role'},
+    _device_default_values = {'device_type': {'slug': 'default-type'},
+                              'device_role': {'slug': 'default-role'},
                               'platform': {'slug': 'ios'},
-                              'site': {'name': 'default_site'},
+                              'site': {'name': 'default-site'},
                               'status': 'active'}
     # regex
     _REGEX_IPV4 = r"^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$"
