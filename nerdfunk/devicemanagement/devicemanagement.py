@@ -93,8 +93,10 @@ class Devicemanagement:
 
     def close(self):
         logging.debug("closing connection to device (%s)" % self.__ip_address)
-        if self.__connection:
+        try:
             self.__connection.close()
+        except:
+            logging.error('connection was not open')
 
     def get_config(self, configtype):
         """
@@ -126,8 +128,8 @@ class Devicemanagement:
             try:
                 response = self.__connection.send_command(command)
             except Exception as exc:
-                logigng.error("could not send command %s toi device; got exception %s" % (command, exc))
-                return None
+                logging.error("could not send command %s to device; got exception %s" % (command, exc))
+                return None 
 
             filename = cmd["command"]["template"].get(self.__platform)
             logging.debug("filename is %s" % filename)

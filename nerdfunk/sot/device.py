@@ -480,7 +480,11 @@ class Device:
             # make interface primary
             if self._make_interface_primary:
                 logging.debug("mark interface as primary")
-                success = nb_device.update({'primary_ip4': primary_ipv4.id})
+                try:
+                    success = nb_device.update({'primary_ip4': primary_ipv4.id})
+                except Exception as exc:
+                    logging.error(f'updating {self._device_name} failed; got exception %s' % exc)
+                    return None
                 if success is None:
                     logging.error("make interface primary failed")
                     logging.debug(f'-- leaving device.py/add_device')
