@@ -17,11 +17,7 @@ class Interface:
         logging.debug("-- entering sot/interfaces.py.py/__init__")
         logging.debug(f'initializing interface {interface_name} on {device}')
         # init variables
-        self._last_attribute = None
-        self._todos = {}
         self._use_defaults = False
-        self._return_interface = True
-        self._bulk = False
 
         # interface properties
         self._interface_name = None
@@ -30,11 +26,6 @@ class Interface:
 
         # connection to nautobot
         self._nautobot = None
-
-        # tags
-        self._interface_tags = []
-        self._tags_to_delete = set()
-        self._tags_to_add = set()
 
         self._interface_name = interface_name
         self._sot = sot
@@ -73,30 +64,23 @@ class Interface:
         
         return properties
 
-    # -----===== user commands =====----- 
-
-    def get(self):
-        logging.debug("-- entering sot/interfaces.py.py/get")
-        if self._interface_obj is None:
-            return self._get_interface_from_nautobot()
-        return self._interface_obj
-
-    def get_properties(self, *unnamed, **named):
-        logging.debug("-- entering sot/interfaces.py.py/_get_properties")
-        logging.debug(f'unnamed: {unnamed} named: {named}')
+    def _get_properties(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py/_get_properties")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
         if 'name' not in properties:
             properties['name'] = self._interface_name
-        logging.debug(f'add interface: {self._interface_name} use_defaults: {self._use_defaults}')
+        logging.debug(f'add interface: {self._interface_name}')
 
-        for key in self._interface_mandatory_properties:
-            if key not in properties:
-                if self._use_defaults:
-                    logging.error(f'mandatory property {key} is missing; using default')
-                    properties[key] = self._interface_default_values.get(key)
-                else:
-                    logging.error(f'mandatory property {key} is missing')
-                    return None
+        if self._use_defaults:
+            for key in self._interface_mandatory_properties:
+                if key not in properties:
+                    if self._use_defaults:
+                        logging.error(f'mandatory property {key} is missing; using default')
+                        properties[key] = self._interface_default_values.get(key)
+                    else:
+                        logging.error(f'mandatory property {key} is missing')
+                        return None
 
         # convert property values to id (vlan, tags, etc.)
         success, error = self._sot.central.get_ids(properties)
@@ -109,22 +93,20 @@ class Interface:
 
         return properties
 
-    def add(self, *unnamed, **named):
-        logging.debug("-- entering sot/interfaces.py.py/add")
-        logging.debug(f'unnamed: {unnamed} named: {named}')
-        return self.__add_interface(self.get_properties(*unnamed, **named))
+    # -----===== user commands =====----- 
 
-    def update(self, *unnamed, **named):
-        logging.debug("-- entering sot/interfaces.py.py/update")
-        logging.debug(f'unnamed: {unnamed} named: {named}')
-        return self.__update_interface(self.get_properties(*unnamed, **named))
+    def get(self):
+        logging.debug("-- entering sot/interfaces.py/get")
+        if self._interface_obj is None:
+            return self._get_interface_from_nautobot()
+        return self._interface_obj
 
     def set_tags(self, new_tags:set):
-        logging.debug("-- entering sot/interfaces.py.py/set_tags")
+        logging.debug("-- entering sot/interfaces.py/set_tags")
         return self.add_tags(new_tags, False)
 
     def add_tags(self, new_tags:set, merge_tags=True):
-        logging.debug("-- entering sot/interfaces.py.py/add_tags")
+        logging.debug("-- entering sot/interfaces.py/add_tags")
         self.open_nautobot()
         logging.debug(f'setting tags {new_tags} on interface {self._interface_name}')
 
@@ -169,25 +151,22 @@ class Interface:
         self._use_defaults = use_defaults
         return self
 
-    def return_interface(self, return_interface):
-        # return_interface == True: return interface instead of None if device
-        # is already part of sot
-        logging.debug(f'setting _return_interface to {return_interface}')
-        self.return_interface = return_interface
-        return self
-
     # -----===== Interface Management =====-----
 
-    def __add_interface(self, interface):
-        logging.debug("-- entering sot/interfaces.py.py/__add_interface")
+    def add(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py/add")
         self.open_nautobot()
-        return self._sot.central.add_entity(func=self._nautobot.dcim.interfaces,
-                                            properties=interface)
 
-    def __update_interface(self, interface):
-        logging.debug("-- entering sot/interfaces.py.py/__update_interface")
+        properties = self._get_properties(*unnamed, **named)
+        return self._sot.central.add_entity(func=self._nautobot.dcim.interfaces,
+                                            properties=properties)
+
+    def update(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py.py/update")
         self.open_nautobot()
+
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
         return self._sot.central.update_entity(func=self._nautobot.dcim.interfaces,
-                                               properties=interface,
+                                               properties=properties,
                                                getter={'name': self._interface_name},
                                                convert_id=False)

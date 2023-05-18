@@ -16,7 +16,7 @@ class Device:
  
     # constant values
     _device_mandatory_properties = ['device_type', 'device_role',
-                                    'platform', 'serial', 'site', 'status']
+                                    'platform', 'site', 'status']
     _device_default_values = {'device_type': {'slug': 'default-type'},
                               'device_role': {'slug': 'default-role'},
                               'platform': {'slug': 'ios'},
@@ -364,9 +364,13 @@ class Device:
         logging.debug("-- entering sot/device.py/primary_interface")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
-        logging.debug(f'setting primary_interface_properties to {properties}')
-        self._primary_interface_properties = properties
-        self._primary_interface = properties
+        if isinstance(properties, dict):
+            logging.debug(f'setting primary_interface_properties to {properties}')
+            self._primary_interface_properties = properties
+            self._primary_interface = properties.get('name', None)
+        else:
+            logging.debug(f'setting _primary_interface to {properties}')
+            self._primary_interface = properties
         return self
 
     def make_primary(self, make_primary):
