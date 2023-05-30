@@ -4,7 +4,7 @@ nautobot:
     token: your_token_here
     hldm: >
         query ($name: [String], $id: [String], $tag: [String]) {
-          devices(name: $name, id: $id, tag: $tag) {
+          devices(name__ie: $name, id: $id, tag: $tag) {
             hostname: name
             serial
             primary_ip4 {
@@ -86,8 +86,11 @@ nautobot:
 
     device_properties: >
         query ($name:[String], $site:[String], $role:[String], $tag:[String]) {
-          devices(name: $name, site: $site, role: $role, tag: $tag) {
+          devices(name__ie: $name, site: $site, role: $role, tag: $tag) {
             hostname: name
+            primary_ip4 {
+              address
+            }
             site {
               name
               slug
@@ -98,13 +101,47 @@ nautobot:
             }
             device_role {
               name
+              slug
             }
-            primary_ip4 {
-              address
+            device_type {
+              model
+              slug
             }
             platform {
               name
               slug
+            }
+          }
+        }
+
+    device_properties_and_interfaces: >
+        query ($name:[String], $site:[String], $role:[String], $tag:[String]) {
+          devices(name__ie: $name, site: $site, role: $role, tag: $tag) {
+            hostname: name
+            primary_ip4 {
+              address
+            }
+            site {
+              name
+              slug
+            }
+            device_role {
+              name
+              slug
+            }
+            device_type {
+              model
+              slug
+            }
+            platform {
+              name
+              slug
+            }
+            interfaces {
+              name
+              ip_addresses {
+                address
+              }
             }
           }
         }
@@ -116,10 +153,6 @@ nautobot:
               hostname: name
               primary_ip4 {
                 address
-              }
-              platform {
-                name
-                slug
               }
               site {
                 name
@@ -133,13 +166,21 @@ nautobot:
                 slug
                 name
               }
+              device_type {
+                model
+                slug
+              }
+              platform {
+                name
+                slug
+              }
             }
           }
         }
 
     device_interfaces: >
         query ($name:[String]) {
-          devices(name: $name) {
+          devices(name__ie: $name) {
             hostname: name
             primary_ip4 {
               address

@@ -37,13 +37,14 @@ class Interface:
         if self._nautobot is None:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
-    def _get_interface_from_nautobot(self):
-        if self._interface_obj is None:
+    def _get_interface_from_nautobot(self, refresh=False):
+        if self._interface_obj is None or refresh:
             self.open_nautobot()
             logging.debug(f'getting interface {self._interface_name} from device {self._device.name}')
             self._interface_obj = self._nautobot.dcim.interfaces.get(
                 device_id=self._device.id,
                 name=self._interface_name)
+
         return self._interface_obj
 
     def __convert_arguments_to_properties(self, *unnamed, **named):
@@ -64,8 +65,10 @@ class Interface:
         
         return properties
 
-    def _get_properties(self, *unnamed, **named):
-        logging.debug("-- entering sot/interfaces.py/_get_properties")
+    # -----===== user commands =====----- 
+
+    def get_properties(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py/get_properties")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
         if 'name' not in properties:
@@ -93,8 +96,6 @@ class Interface:
 
         return properties
 
-    # -----===== user commands =====----- 
-
     def get(self):
         logging.debug("-- entering sot/interfaces.py/get")
         if self._interface_obj is None:
@@ -114,7 +115,10 @@ class Interface:
             logging.error(f'unknown device')
             return None
 
-        interface = self._get_interface_from_nautobot()
+        interface = self._get_interface_from_nautobot(refresh=True)
+        if not interface:
+            logging.error(f'unknown interface {self._interface_name}')
+            return None
 
         # merge tags: merge old and new one
         # if merge is false only the new tags are published to the interface
@@ -125,20 +129,26 @@ class Interface:
         logging.debug(f'current tags: {interface.tags}')
         logging.debug(f'updating tags to {new_tags}')
 
-        # check if new tag is known
+        # check if new tag is known; add id to final list
+        final_list = []
         for new_tag in new_tags:
             tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
             if tag is None:
                 logging.error(f'unknown tag {new_tag}')
-                new_tags.remove(new_tag)
+            else:
+                final_list.append(tag.id)
 
-        properties = {'tags': list(new_tags)}
-        logging.debug(f'final list of tags {properties}')
-        # getter to get the interface; we use the device id!
-        getter = {'device_id': self._device.id, 'id': interface.id}
-        return self._sot.central.update_entity(self._nautobot.dcim.interfaces,
-                                     properties,
-                                     getter)
+        if len(final_list) > 0:
+            properties = {'tags': list(final_list)}
+            logging.debug(f'final list of tags {properties}')
+            # getter to get the interface; we use the device id!
+            getter = {'device_id': self._device.id, 'id': interface.id}
+            return self._sot.central.update_entity(self._nautobot.dcim.interfaces,
+                                                properties,
+                                                getter)
+        else:
+            logging.debug(f'empty tag list')
+            return None
 
     # -----===== attributes =====-----
 
@@ -157,7 +167,7 @@ class Interface:
         logging.debug("-- entering sot/interfaces.py/add")
         self.open_nautobot()
 
-        properties = self._get_properties(*unnamed, **named)
+        properties = self.get_properties(*unnamed, **named)
         return self._sot.central.add_entity(func=self._nautobot.dcim.interfaces,
                                             properties=properties)
 

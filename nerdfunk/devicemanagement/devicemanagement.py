@@ -24,15 +24,15 @@ def get_loglevel(level):
 
 class Devicemanagement:
 
-    __ip_address = None
-    __platform = None
-    __manufacturer = None
-    __username = None
-    __password = None
-    __port = 22
-    __connection = None
-
     def __init__(self, **kwargs):
+        self.__ip_address = None
+        self.__platform = None
+        self.__manufacturer = None
+        self.__username = None
+        self.__password = None
+        self.__port = 22
+        self.__connection = None
+
         if 'ip' in kwargs:
             self.__ip_address = kwargs['ip']
         if 'platform' in kwargs:
@@ -238,8 +238,8 @@ class Devicemanagement:
                     facts["model"] = "nexus-%s" % model
             facts["hostname"] = values["show version"][0]["HOSTNAME"]
 
-        if "show hosts summary" in values and len(values["show hosts summary"]) > 0:
-            facts["fqdn"] = "%s.%s" % (facts.get("hostname"), values["show hosts summary"][0]["DEFAULT_DOMAIN"])
+        if "show hosts" in values and len(values["show hosts"]) > 0:
+            facts["fqdn"] = "%s.%s" % (facts.get("hostname"), values["show hosts"][0]["DEFAULT_DOMAIN"])
         else:
             facts["fqdn"] = facts.get("hostname")
 

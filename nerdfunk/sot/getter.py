@@ -16,6 +16,7 @@ class Getter(object):
         cls._sot = None
         cls._nautobot = None
         cls._output_format = None
+        cls._use = None
         cls._cache = {'site':{}, 'vlan': {}, 'tag': {} }
 
         # singleton
@@ -77,6 +78,12 @@ class Getter(object):
 
     # -----===== user command =====-----
 
+    def use(self, use):
+        self._use = use
+        return self
+
+    # -----===== user command =====-----
+
     def load_cache(self):
         all_tags = self.query(name='all_tags', 
                                 output_format='dict',
@@ -127,7 +134,7 @@ class Getter(object):
         return git.get_file(self._sot.get_config(), properties)
 
     def device(self, *unnamed, **named):
-        logging.debug("getting device from sot")
+        logging.debug("-- entering getter.py/device")
         self.open_nautobot()
         getter = None
 
@@ -136,7 +143,7 @@ class Getter(object):
                 if isinstance(item, str):
                     device_name = item
         if 'device' in named:
-            getter = {'name': named.get('device')}
+            getter = {'name__ie': named.get('device')}
         elif 'ip' in named:
             response = self.query(name='device_properties_by_cidr', 
                                 query_params={'cidr': named.get('ip')})
@@ -163,6 +170,40 @@ class Getter(object):
         else:
             return device
 
+    def devices(self, *unnamed, **named):
+        logging.debug("-- entering getter.py/device")
+
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+
+        query = {'query_params': properties,
+                 'output_format': 'dict'}
+        devices = {}
+        data = []
+
+        if 'cidr' in properties:
+            query['name'] = "device_properties_by_cidr"
+        else:
+            query['name'] = "device_properties"
+        
+        logging.debug(f'query: {query}')
+        raw = self.query(query)
+
+        if query['name'] == "device_properties_by_cidr":
+            for device in raw['data']['ip_addresses']:
+                data.append(device.get('primary_ip4_for'))
+        if query['name'] == "device_properties":
+            data = raw['data']['devices']
+
+        for device in data:
+            if device:
+                hostname = device.get('hostname')
+                devices[hostname] = {'primary_ip': device.get('primary_ip4'),
+                                    'device_type': device.get('device_type'),
+                                    'device_role': device.get('device_role'),
+                                    'platform': device.get('platform')}
+
+        return devices
+
     def filter(self, **filter):
         logging.debug(f'getting filtered list of devices from sot using {filter}')
 
@@ -184,25 +225,33 @@ class Getter(object):
         else:
             return devices
 
-    def query(self, **unnamed):
-        logging.debug(f'running graph ql query {unnamed}')
+    def query(self, *unnamed, **named):
+        logging.debug("-- entering getter.py/query")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
         query = None
         query_params = None
 
-        if 'name' in unnamed:
+        if 'name' in properties:
             config = self._sot.get_config()
-            query = config['nautobot'].get(unnamed['name'])
+            query = config['nautobot'].get(properties['name'])
             if query is None:
-                logging.error("unkown query %s" % unnamed['name'])
+                logging.error("unkown query %s" % properties['name'])
                 return None
-        if 'query_params' in unnamed:
-            query_params = unnamed['query_params']
+        if 'query' in properties:
+            query = properties.get('query')
+        if 'query_params' in properties:
+            query_params = properties['query_params']
+
+        if self._use:
+            logging.debug(f'using {self._use} instead of name__ie')
+            query = query.replace('name__ie', self._use)
+            self._use = None
 
         self.open_nautobot()
         response = self._nautobot.graphql.query(query=query, variables=query_params).json
-        
-        if 'output_format' in unnamed:
-            output_format = unnamed.get('output_format')
+
+        if 'output_format' in properties:
+            output_format = properties.get('output_format')
         else:
             output_format = self._output_format
 
