@@ -160,3 +160,4 @@ cython_debug/
 #.idea/
 nerdfunk/sot/config.yaml
 nerdfunk/sot/conf/sot/config.yaml
+nerdfunk/sot/conf/analyzer/analyzer.yaml
