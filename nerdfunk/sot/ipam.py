@@ -528,10 +528,8 @@ class Ipam(object):
         logging.debug(f'prepare assignment of IP address: {ip_address}')
 
         if isinstance(ip_address, IpAddresses):
-            logging.debug("IP address is obj")
             nb_ipadd = self._nautobot.ipam.ip_addresses.get(id=ip_address.id)
         else:
-            logging.debug("IP address is str")
             try:
                 nb_ipadd = self._nautobot.ipam.ip_addresses.get(address=ip_address)
             except Exception as exc:
@@ -557,10 +555,8 @@ class Ipam(object):
         logging.debug("got IP address %s" % nb_ipadd)
 
         if isinstance(self._device, Devices):
-            logging.debug("device is obj")
             nb_device = self._nautobot.dcim.devices.get(id=self._device.id)
         else:
-            logging.debug("device is str")
             nb_device = self._nautobot.dcim.devices.get(name=self._device)
 
         logging.debug("got device %s" % nb_device)
@@ -569,10 +565,8 @@ class Ipam(object):
             return None
 
         if isinstance(self._interface, Interfaces):
-            logging.debug("interface is obj")
             nb_interface = self._nautobot.dcim.interfaces.get(id=self._interface.id)
         else:
-            logging.debug("interface is str")
             nb_interface = self._nautobot.dcim.interfaces.get(device_id=nb_device.id, name=self._interface)
         logging.debug("got interface %s" % nb_interface)
 
