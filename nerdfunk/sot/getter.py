@@ -78,11 +78,10 @@ class Getter(object):
 
     # -----===== user command =====-----
 
+    # use another pattern instead of name__ie when query devices
     def use(self, use):
         self._use = use
         return self
-
-    # -----===== user command =====-----
 
     def load_cache(self):
         all_tags = self.query(name='all_tags', 
@@ -146,7 +145,7 @@ class Getter(object):
             getter = {'name__ie': named.get('device')}
         elif 'ip' in named:
             response = self.query(name='device_properties_by_cidr', 
-                                query_params={'cidr': named.get('ip')})
+                                  query_params={'cidr': named.get('ip')})
             if len(response['data']['ip_addresses']) > 0:
                 if response['data']['ip_addresses'][0]['primary_ip4_for'] is None:
                     logging.debug("device %s not found in sot" % named.get('ip'))

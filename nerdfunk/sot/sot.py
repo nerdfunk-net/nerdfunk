@@ -9,6 +9,8 @@ from . import central
 from . import importer
 from . import auth
 from . import messenger
+from . import analyzer
+from . import configparser
 from ..utilities import misc
 from dotenv import load_dotenv, dotenv_values
 
@@ -16,7 +18,7 @@ from dotenv import load_dotenv, dotenv_values
 class Sot:
 
     BASEDIR = os.path.abspath(os.path.dirname(__file__))
-    DEFAULT_FILENAME = "./config.yaml"
+    DEFAULT_FILENAME = "./conf/sot/config.yaml"
 
     def __init__(self, **named):
         # initialize variables
@@ -27,6 +29,8 @@ class Sot:
         self.__auth = None
         self.__central = None
         self.__messenger = None
+        self.__analyzer = None
+        self.__configparser = None
         self._sot_config = None
         self._logs = []
         self._per_device = {}
@@ -66,7 +70,11 @@ class Sot:
             if self.__messenger is None:
                 self.__messenger = messenger.Messenger(self)
             return self.__messenger
-
+        if item == "analyzer":
+            if self.__analyzer is None:
+                self.__analyzer = analyzer.Analyzer(self)
+            return self.__analyzer
+    
     def get_token(self):
         return self._sot_config['nautobot']['token']
 
@@ -80,6 +88,9 @@ class Sot:
         if name not in self.__devices:
             self.__devices[name] = device.Device(self, name)
         return self.__devices[name]
+
+    def configparser(self, *unnamed, **named):
+        return configparser.Configparser(self, *unnamed, **named)
 
     def auth(self, **named):
         parameter = dict(named)

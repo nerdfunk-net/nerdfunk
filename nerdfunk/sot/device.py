@@ -8,6 +8,7 @@ from pynautobot import api
 from pynautobot.models.dcim import Devices
 from pynautobot.models.dcim import Interfaces as PyInterfaces
 from pynautobot.models.ipam import IpAddresses
+from .. import devicemanagement as dm
 from . import central
 from . import git
 
@@ -276,7 +277,7 @@ class Device:
                 logging.info(f'updating is set to true; updating device')
                 update_device = True
             else:
-                logging.info(f'skipping functionality')
+                logging.info(f'update disabled; skipping device')
         return add_device, update_device
 
     def set_config_context(self, config_context):
@@ -593,3 +594,4 @@ class Device:
         return self._sot.central.update_entity(self._nautobot.extras.tags,
                                      properties,
                                      {'name': self._device_name})
+
