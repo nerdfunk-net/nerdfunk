@@ -2,6 +2,7 @@
 nautobot:
     url: http://127.0.0.1:8080
     token: your_token_here
+
     hldm: >
         query ($name: [String], $id: [String], $tag: [String]) {
           devices(name__ie: $name, id: $id, tag: $tag) {
@@ -257,7 +258,7 @@ nautobot:
         }
 
 git:
-    # please config your GIT here
+    # please configure your GIT here
     sot_data:
         username: your@email
         token: "your_git_token"
@@ -286,6 +287,12 @@ phpipam:
   # set $api_allow_unsafe = true; in config.php to disable SSL
   phpipam_ssl_verify: false
 
+analyzer:
+  config: ./conf/analyzer/analyzer.yaml
+
+configparser:
+  config: ./conf/configparser/configparser.yaml
+  
 templates:
     directory: "../sot_data/templates/"
     trim_blocks: True
