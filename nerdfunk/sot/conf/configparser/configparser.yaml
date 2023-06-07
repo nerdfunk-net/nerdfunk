@@ -1,0 +1,3 @@
+---
+templates:
+  ios: "./conf/configparser/templates/ios_config.tpl"
