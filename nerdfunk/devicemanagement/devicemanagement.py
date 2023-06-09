@@ -99,17 +99,10 @@ class Devicemanagement:
             logging.error('connection was not open')
 
     def get_config(self, configtype):
-        """
-        return config from device
-
-        Args:
-            configtype:
-
-        Returns:
-            config: str
-        """
-
         logging.debug("send show %s to device (%s)" % (configtype, self.__ip_address))
+        if not self.__connection:
+                if not self.open():
+                    return None
         response = self.__connection.send_command("show %s" % configtype)
         return response.result
 

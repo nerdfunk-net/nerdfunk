@@ -57,6 +57,7 @@ class Configparser(object):
             platform = properties.get('platform','ios')
             # use default template that is configured in config
             filename = self._my_config.get('templates',{}).get(platform, None)
+            logging.debug(f'using ttp template {filename}')
         else:
             filename = self._template_filename
         if filename is None:
