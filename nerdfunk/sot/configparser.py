@@ -181,3 +181,132 @@ class Configparser(object):
                 else:
                     found = False
         return response
+
+    def get_global_config(self):
+        logging.debug(f'-- entering configparser.py/get_global')
+
+        response = []
+        for line in self._device_config.splitlines():
+            if line.lower().startswith('interface '):
+                found = True
+                continue
+            elif not line.lower().startswith('interface '):
+                found = False
+            if not found:
+                response.append(line)
+
+        return response
+
+    def _find_in_line(self, key, lookup, value, line):
+        """
+        n - not equal to (negation)
+        ic - case-insensitive contains (*)
+        c - case-sensitive contains (*)
+        ie - case-insensitive exact match (*)
+
+        nic - negated case-insensitive contains
+        isw - case-insensitive starts-with
+        nisw - negated case-insensitive starts-with
+        iew - case-insensitive ends-with
+        niew - negated case-insensitive ends-with
+        nie - negated case-insensitive exact match
+        re - case-sensitive regular expression match
+        nre - negated case-sensitive regular expression match
+        ire - case-insensitive regular expression match
+        nire - negated case-insensitive regular expression match
+        """
+
+        # logging.debug(f'key: {key} lookup: {lookup} value: {value} line: {line}')
+        if key == 'match':
+            if lookup == "ie":
+                # case-insensitive exact match
+                if line.lower() == value.lower():
+                    return True
+            elif lookup == "ic":
+                # case-insensitive contains
+                if value.lower() in line.lower():
+                    return True
+            elif lookup == "c":
+            # case-sensitive contains
+                if value in line:
+                    return True
+            else:
+                if line == value:
+                    return True
+
+        return False
+
+    def find_in_global(self, properties):
+        logging.debug(f'-- entering configparser.py/find_in_global')
+
+        key = None
+        value = None
+        ignore_leading_spaces = False
+
+        for k,v in properties.items():
+            if 'match' in k:
+                key = k
+                value = v
+            elif 'ignore_leading_spaces' == k:
+                ignore_leading_spaces = v
+    
+        global_config = self.get_global_config()
+
+        # the key can be match__ic etc.
+        cmd = key.split('__')[0]
+        if '__' in key:
+            lookup = key.split('__')[1]
+
+        logging.debug(f'cmd: "{cmd}" lookup: "{lookup}" value: "{value}" lines: {len(global_config)}')
+
+        for line in global_config:
+            if properties.get('ignore_leading_spaces'):
+                src = line.lstrip()
+            else:
+                src = line
+
+            if self._find_in_line(cmd, lookup, value, src):
+                logging.debug(f'found pattern in global config')
+                return True
+        
+        return False
+
+    def find_in_interfaces(self, properties):
+        logging.debug(f'-- entering configparser.py/find_in_interfaces')
+
+        key = None
+        value = None
+        ignore_leading_spaces = False
+
+        for k,v in properties.items():
+            if 'match' in k:
+                key = k
+                value = v
+            elif 'ignore_leading_spaces' == k:
+                ignore_leading_spaces = v
+    
+        interface_config = self.get_section('interfaces')
+
+        # matched_on contains the list of all interfaces the value matched
+        matched_on = []
+        # the key can be match__ic etc.
+        cmd = key.split('__')[0]
+        if '__' in key:
+            lookup = key.split('__')[1]
+
+        logging.debug(f'cmd: "{cmd}" lookup: "{lookup}" value: "{value}" lines: {len(interface_config)}')
+
+        for line in interface_config:
+            if ignore_leading_spaces:
+                src = line.lstrip()
+            else:
+                src = line
+
+            if src.lower().startswith('interface '):
+                interface = line[10:]
+            
+            if self._find_in_line(cmd, lookup, value, src):
+                matched_on.append(interface)
+
+        logging.debug(f'matched_on={matched_on}')
+        return matched_on
