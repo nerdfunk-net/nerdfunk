@@ -163,7 +163,17 @@ class Interface:
         else:
             logging.debug(f'empty tag list')
             return None
-      
+    
+    def set_customfield(self, *unnamed, **named):
+        logging.debug("-- entering sot/interfaces.py/set_customfield")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+        self.open_nautobot()
+        return self._sot.central.update_entity(func=self._nautobot.dcim.interfaces,
+                                               properties={'custom_fields': properties},
+                                               getter={'device': self._device.name,
+                                                       'name': self._interface_name},
+                                               convert_id=False)
+
     # -----===== attributes =====-----
 
     def set_device(self, device):
@@ -192,5 +202,6 @@ class Interface:
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
         return self._sot.central.update_entity(func=self._nautobot.dcim.interfaces,
                                                properties=properties,
-                                               getter={'name': self._interface_name},
+                                               getter={'device': self._device.name,
+                                                       'name': self._interface_name},
                                                convert_id=False)

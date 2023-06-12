@@ -621,3 +621,26 @@ class Device:
                                      properties,
                                      {'name': self._device_name})
 
+    def set_customfield(self, *unnamed, **named):
+        logging.debug('-- entering device.py/set_customfield')
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+        self.open_nautobot()
+
+        if self._last_request == "interface":
+            logging.debug(f'setting custom field {properties} on interface {self._last_requested_interface}')
+            if self._last_requested_interface is not None and self._last_requested_interface not in self._interfaces:
+                logging.debug(f'adding interface {self._last_requested_interface} to list of interfaces')
+                self._interfaces[self._last_requested_interface] = interfaces.Interface(
+                    self._last_requested_interface,
+                    self._sot,
+                    self._get_device_from_nautobot())
+
+            return self._interfaces[self._last_requested_interface].set_customfield(properties)
+        else:
+            logging.debug(f'setting custom field {properties} on device {self._device_name}')
+            return self._sot.central.update_entity(self._nautobot.dcim.devices,
+                                               {'custom_fields': properties},
+                                               {'name': self._device_name})
+
+
+
