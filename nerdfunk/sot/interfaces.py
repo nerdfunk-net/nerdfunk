@@ -103,13 +103,18 @@ class Interface:
         return self._interface_obj
 
     def set_tags(self, new_tags:set):
-        logging.debug("-- entering sot/interfaces.py/set_tags")
-        return self.add_tags(new_tags, False)
+        return self.modify_tags(new_tags, False, False)
 
-    def add_tags(self, new_tags:set, merge_tags=True):
-        logging.debug("-- entering sot/interfaces.py/add_tags")
+    def add_tags(self, new_tags:set):
+        self.modify_tags(new_tags, True, False)
+
+    def delete_tags(self, tags):
+        self.modify_tags(tags, False, True)
+      
+    def modify_tags(self, modified_tags:set, merge_tags=True, remove_tags=False):
+        logging.debug("-- entering sot/interfaces.py/modify_tags")
         self.open_nautobot()
-        logging.debug(f'setting tags {new_tags} on interface {self._interface_name}')
+        logging.debug(f'modify tags {modified_tags} on interface {self._interface_name} merge: {merge_tags} remove_tags: {remove_tags}')
 
         if self._device is None:
             logging.error(f'unknown device')
@@ -124,21 +129,30 @@ class Interface:
         # if merge is false only the new tags are published to the interface
         if merge_tags:
             for tag in interface.tags:
-                new_tags.add(tag.name)
+                modified_tags.add(tag.name)
+        if remove_tags:
+            tags = set()
+            # tags that are in modified_tags are REMOVED in this case
+            for tag in interface.tags:
+                if tag.name not in modified_tags:
+                    tags.add(tag.name)
+            modified_tags = tags
 
         logging.debug(f'current tags: {interface.tags}')
-        logging.debug(f'updating tags to {new_tags}')
+        logging.debug(f'updating tags to {modified_tags}')
 
         # check if new tag is known; add id to final list
         final_list = []
-        for new_tag in new_tags:
+        for new_tag in modified_tags:
             tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
             if tag is None:
                 logging.error(f'unknown tag {new_tag}')
             else:
                 final_list.append(tag.id)
 
-        if len(final_list) > 0:
+        if len(final_list) > 0 or remove_tags:
+            # if remove_tags is True it is possibible to set an empty list
+            # in this case ALL tags are removed
             properties = {'tags': list(final_list)}
             logging.debug(f'final list of tags {properties}')
             # getter to get the interface; we use the device id!
@@ -149,7 +163,7 @@ class Interface:
         else:
             logging.debug(f'empty tag list')
             return None
-
+      
     # -----===== attributes =====-----
 
     def set_device(self, device):

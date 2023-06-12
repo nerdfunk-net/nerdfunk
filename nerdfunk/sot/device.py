@@ -231,11 +231,23 @@ class Device:
             self._last_request = None
             for tag in self._last_requested_tags:
                 self._tags_to_delete.add(tag)
-            return self.delete_tags()
+            return self.delete_device_tags()
         else:
             return self.delete_device()
 
-    def add_tags(self, new_tags):
+    def set_tags(self, tags):
+        # set tags overwrites existing tags
+        return self.modify_tags(tags, True, False)
+
+    def add_tags(self, tags):
+        # add tag to existing ones
+        return self.modify_tags(tags, False, False)
+
+    def delete_tags(self, tags):
+        # remove tags
+        return self.modify_tags(tags, False, True)
+
+    def modify_tags(self, new_tags, set_tag=False, remove_tags=False):
         logging.debug("-- entering sot/device.py.py/add_tags")
         if self._last_request == "interface":
             logging.debug(f'setting tags {new_tags} on interface {self._last_requested_interface}')
@@ -251,7 +263,12 @@ class Device:
             elif isinstance(new_tags, list):
                 for tag in new_tags:
                     tags.add(tag)
-            return self._interfaces[self._last_requested_interface].add_tags(tags)
+            if set_tag:
+                return self._interfaces[self._last_requested_interface].set_tags(tags)
+            elif remove_tags:
+                return self._interfaces[self._last_requested_interface].delete_tags(tags)
+            else:
+                return self._interfaces[self._last_requested_interface].add_tags(tags)
         else:
             logging.debug(f'adding tags {new_tags} on device {self._device_name}')
             tags = set()
@@ -263,7 +280,12 @@ class Device:
             else:
                 logging.error(f'please add tags as string or list of strings')
                 return None
-            return self.add_device_tags(tags)
+            if set_tag:
+                return self.set_device_tags(tags)
+            elif remove_tags:
+                return self.delete_device_tags(tags)
+            else:
+                return self.add_device_tags(tags)    
 
     def add_or_update(self, update_configured):
         logging.debug("-- entering sot/device.py.py/add_or_update")
@@ -537,24 +559,28 @@ class Device:
 
         return self._sot.central.delete_entity(self._nautobot.dcim.devices, "Device", {'name': self._device_name}, {'name': self._device_name})
 
-    def add_device_tags(self, new_tags):
+    def set_device_tags(self, new_tags):
+        self.add_device_tags(new_tags, True)
+
+    def add_device_tags(self, new_tags, set_tag=False):
         logging.debug('-- entering device.py/add_device_tags')
         self.open_nautobot()
+        final_list = []
 
-        # if the device already exists there may also be tags
-        device = self._get_device_from_nautobot(refresh=True)
-        if device is None:
-            logging.error(f'unknown device {self._device_name}')
-            return None
+        if not set_tag:
+            # if the device already exists there may also be tags
+            device = self._get_device_from_nautobot(refresh=True)
+            if device is None:
+                logging.error(f'unknown device {self._device_name}')
+                return None
 
-        for tag in device.tags:
-            new_tags.add(tag.name)
+            for tag in device.tags:
+                new_tags.add(tag.name)
 
-        logging.debug(f'current tags: {device.tags}')
-        logging.debug(f'updating tags to {new_tags}')
+            logging.debug(f'current tags: {device.tags}')
+            logging.debug(f'updating tags to {new_tags}')
 
         # check if new tag is known; add id to final list
-        final_list = []
         for new_tag in new_tags:
             tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
             if tag is None:
@@ -569,7 +595,7 @@ class Device:
                                                    properties,
                                                    {'name': self._device_name})
 
-    def delete_tags(self):
+    def delete_device_tags(self):
         logging.debug('-- entering device.py/delete_tags')
         self.open_nautobot()
         logging.debug(f'deleting tags {self._tags_to_delete} from sot')
