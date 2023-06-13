@@ -528,7 +528,7 @@ class Device:
         logging.debug(f'-- leaving device.py/add_device')
         return nb_device
 
-    def update_device(self, device_properties):
+    def update_device(self, device_properties, convert_to_id=True):
         logging.debug('-- entering device.py/update_device')
         self.open_nautobot()
 
@@ -537,19 +537,18 @@ class Device:
             logging.info("device %s does not exists" % self._device_name)
             return None
 
-        logging.debug("converting properties to IDs")
-        logging.debug(device_properties)
-        success, error = self._sot.central.get_ids(device_properties)
-        if not success:
-            logging.error(f'could not convert properties to IDs; {error}')
-            return None
-
+        if convert_to_id:
+            logging.debug("converting properties to IDs")
+            success, error = self._sot.central.get_ids(device_properties)
+            if not success:
+                logging.error(f'could not convert properties to IDs; {error}')
+                return None
         try:
             success = nb_device.update(device_properties)
             logging.debug('device %s updated successfully' % device_properties['name'])
             return nb_device
         except Exception as exc:
-            logging.error(f'could not add device to nautobot; got exception %s' % exc)
+            logging.error(f'could not update device; got exception %s' % exc)
             return None
 
     def delete_device(self):

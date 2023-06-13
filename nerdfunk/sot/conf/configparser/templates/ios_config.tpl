@@ -304,7 +304,8 @@ policy-map {{ policy_map | ORPHRASE | record(vrf) }}
 <group name="global.policy.class">
 class-map match-{{match_type}} {{class_name}}
  <group name="match">
- match {{type}} {{ value | ORPHRASE | unrange(rangechar='-', joinchar='  ' ) | split('  ') }}
+ match {{type}} name {{ name | ORPHRASE }}
+## match {{type}} {{ value | ORPHRASE | unrange(rangechar='-', joinchar='  ' ) | split('  ') }}
 </group>
 </group>
 
