@@ -27,7 +27,7 @@ class Device:
     _REGEX_IPV4 = r"^([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})\.([0-9]{1,3})$"
 
     def __init__(self, sot, device_or_ip):
-        logging.debug("-- entering sot/device.py.py/__init__")
+        logging.debug("-- entering sot/device.py/__init__")
         logging.debug(f'initializing device {device_or_ip} (device.py)')
 
         # init variables
@@ -77,7 +77,7 @@ class Device:
             self._nautobot = api(self._sot.get_nautobot_url(), token=self._sot.get_token())
 
     def _get_device_from_nautobot(self, refresh=False):
-        logging.debug("-- entering sot/device.py.py/_get_device_from_nautobot")
+        logging.debug("-- entering sot/device.py/_get_device_from_nautobot")
         # sometimes we need to refresh the object eg. when adding tags
         # when adding a a list of tags the object will not notice that the tags
         # have changed
@@ -133,13 +133,13 @@ class Device:
     # -----===== user commands =====-----
 
     def set_interface_defaults(self, defaults):
-        logging.debug("-- entering sot/device.py.py/set_interface_defaults")
+        logging.debug("-- entering sot/device.py/set_interface_defaults")
         logging.debug(f'setting interface defaults to {defaults}')
         self._interface_defaults = defaults
         return self
 
     def get(self):
-        logging.debug("-- entering sot/device.py.py/get")
+        logging.debug("-- entering sot/device.py/get")
         if self._last_request == "interface":
             interface = self._last_requested_interface
             if interface is None:
@@ -151,12 +151,12 @@ class Device:
             return self._get_device_from_nautobot()
 
     def get_all_interfaces(self):
-        logging.debug("-- entering sot/device.py.py/get_all_interfaces")
+        logging.debug("-- entering sot/device.py/get_all_interfaces")
         self.open_nautobot()
         return self._nautobot.dcim.interfaces.filter(device_id=self._get_device_from_nautobot().id)
 
     def add(self, *unnamed, **named):
-        logging.debug("-- entering sot/device.py.py/add")
+        logging.debug("-- entering sot/device.py/add")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
         if self._last_request == "interface":
@@ -183,7 +183,7 @@ class Device:
             return self.add_device(properties)
 
     def add_range(self, first_interface, last_interface):
-        logging.debug("-- entering sot/device.py.py/add_range")
+        logging.debug("-- entering sot/device.py/add_range")
         logging.debug(f'adding interface {first_interface} to {last_interface}')
 
         prefix = first_interface[:first_interface.rfind('/')]
@@ -200,7 +200,7 @@ class Device:
                     .add(self._interface_defaults)
 
     def update(self, *unnamed, **named):
-        logging.debug("-- entering sot/device.py.py/update")
+        logging.debug("-- entering sot/device.py/update")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
         if self._last_request == "interface":
             interface = self._last_requested_interface
@@ -221,7 +221,7 @@ class Device:
             return self.update_device(properties)
 
     def delete(self):
-        logging.debug("-- entering sot/device.py.py/delete")
+        logging.debug("-- entering sot/device.py/delete")
         if self._last_request == "interface":
             interface = self._last_requested_interface
             self._last_requested_interface = None
@@ -248,7 +248,7 @@ class Device:
         return self.modify_tags(tags, False, True)
 
     def modify_tags(self, new_tags, set_tag=False, remove_tags=False):
-        logging.debug("-- entering sot/device.py.py/add_tags")
+        logging.debug("-- entering sot/device.py/add_tags")
         if self._last_request == "interface":
             logging.debug(f'setting tags {new_tags} on interface {self._last_requested_interface}')
             if self._last_requested_interface is not None and self._last_requested_interface not in self._interfaces:
@@ -288,7 +288,7 @@ class Device:
                 return self.add_device_tags(tags)    
 
     def add_or_update(self, update_configured):
-        logging.debug("-- entering sot/device.py.py/add_or_update")
+        logging.debug("-- entering sot/device.py/add_or_update")
         self.open_nautobot()
         add_device = True
         update_device = False
@@ -303,17 +303,17 @@ class Device:
         return add_device, update_device
 
     def set_config_context(self, config_context):
-        logging.debug("-- entering sot/device.py.py/set_config_context")
+        logging.debug("-- entering sot/device.py/set_config_context")
         logging.debug(f'writing config context of {self._device_name}')
         return git.edit_file(self._sot.get_config(), config_context)
 
     def write_backup(self, config_context):
-        logging.debug("-- entering sot/device.py.py/write_backup")
+        logging.debug("-- entering sot/device.py/write_backup")
         logging.debug(f'writing config backup {self._device_name}')
         return git.edit_file(self._sot.get_config(), config_context)
 
     def connection_to(self, *unnamed, **named):
-        logging.debug("-- entering sot/device.py.py/connection_to")
+        logging.debug("-- entering sot/device.py/connection_to")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
         self.open_nautobot()
         
