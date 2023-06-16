@@ -41,7 +41,7 @@ class Central(object):
 
         # check if entity is part of sot
         try:
-            logging.debug(f'getter: {getter}')
+            # logging.debug(f'getter: {getter}')
             entity = func.get(**getter)
             if entity is None:
                 logging.debug(f'entity not found in sot')

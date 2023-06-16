@@ -11,6 +11,7 @@ from . import auth
 from . import messenger
 from . import analyzer
 from . import configparser
+from . import updater
 from ..utilities import misc
 from dotenv import load_dotenv, dotenv_values
 
@@ -31,6 +32,7 @@ class Sot:
         self.__messenger = None
         self.__analyzer = None
         self.__configparser = None
+        self.__updater = None
         self._sot_config = None
         self._logs = []
         self._per_device = {}
@@ -74,7 +76,11 @@ class Sot:
             if self.__analyzer is None:
                 self.__analyzer = analyzer.Analyzer(self)
             return self.__analyzer
-    
+        if item == "updater":
+            if self.__updater is None:
+                self.__updater = updater.Updater(self)
+            return self.__updater
+
     def get_token(self):
         return self._sot_config['nautobot']['token']
 

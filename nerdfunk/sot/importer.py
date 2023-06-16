@@ -22,6 +22,7 @@ class Importer(object):
                            'interface_templates': self._nautobot.dcim.interface_templates,
                            'tags': self._nautobot.extras.tags,
                            'custom_fields': self._nautobot.extras.custom_fields,
+                           'custom_field_choices': self._nautobot.extras.custom_field_choices,
                            'webhooks': self._nautobot.extras.webhooks,
                            'device_types': self._nautobot.dcim.device_types,
                            'console_port_templates': self._nautobot.dcim.console_port_templates,
