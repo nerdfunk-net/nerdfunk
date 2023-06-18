@@ -78,8 +78,8 @@ class Getter(object):
 
     # -----===== user command =====-----
 
-    # use another pattern instead of name__ie when query devices
     def use(self, use):
+        # use another pattern instead of name__ie when query devices
         self._use = use
         return self
 

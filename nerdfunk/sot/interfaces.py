@@ -18,6 +18,7 @@ class Interface:
         logging.debug(f'initializing interface {interface_name} on {device}')
         # init variables
         self._use_defaults = False
+        self._interface_defaults = {}
 
         # interface properties
         self._interface_name = None
@@ -67,6 +68,12 @@ class Interface:
 
     # -----===== user commands =====----- 
 
+    def set_interface_defaults(self, defaults):
+        logging.debug("-- entering sot/interfaces.py/set_interface_defaults")
+        logging.debug(f'setting interface defaults to {defaults}')
+        self._interface_defaults = defaults
+        return self
+
     def get_properties(self, *unnamed, **named):
         logging.debug("-- entering sot/interfaces.py/get_properties")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
@@ -111,10 +118,20 @@ class Interface:
     def delete_tags(self, tags):
         self.modify_tags(tags, False, True)
       
-    def modify_tags(self, modified_tags:set, merge_tags=True, remove_tags=False):
+    def modify_tags(self, tags, merge_tags=True, remove_tags=False):
+        list_of_tags = set()
         logging.debug("-- entering sot/interfaces.py/modify_tags")
         self.open_nautobot()
-        logging.debug(f'modify tags {modified_tags} on interface {self._interface_name} merge: {merge_tags} remove_tags: {remove_tags}')
+        logging.debug(f'modify tags {list_of_tags} on interface {self._interface_name} merge: {merge_tags} remove_tags: {remove_tags}')
+
+        # tags con be either a list or a set; convert tags to set
+        if isinstance(tags, list):
+            for tag in tags:
+                list_of_tags.add(tag)
+        elif isinstance(tags, set):
+            list_of_tags = tags
+        else:
+            logging.error(f'list of tags must be either list or set')
 
         if self._device is None:
             logging.error(f'unknown device')
@@ -129,21 +146,21 @@ class Interface:
         # if merge is false only the new tags are published to the interface
         if merge_tags:
             for tag in interface.tags:
-                modified_tags.add(tag.name)
+                list_of_tags.add(tag.name)
         if remove_tags:
             tags = set()
-            # tags that are in modified_tags are REMOVED in this case
+            # tags that are in list_of_tags are REMOVED in this case
             for tag in interface.tags:
-                if tag.name not in modified_tags:
+                if tag.name not in list_of_tags:
                     tags.add(tag.name)
-            modified_tags = tags
+            list_of_tags = tags
 
         logging.debug(f'current tags: {interface.tags}')
-        logging.debug(f'updating tags to {modified_tags}')
+        logging.debug(f'updating tags to {list_of_tags}')
 
         # check if new tag is known; add id to final list
         final_list = []
-        for new_tag in modified_tags:
+        for new_tag in list_of_tags:
             tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
             if tag is None:
                 logging.error(f'unknown tag {new_tag}')
@@ -157,9 +174,10 @@ class Interface:
             logging.debug(f'final list of tags {properties}')
             # getter to get the interface; we use the device id!
             getter = {'device_id': self._device.id, 'id': interface.id}
+            logging.debug(f'getter: {getter}')
             return self._sot.central.update_entity(self._nautobot.dcim.interfaces,
-                                                properties,
-                                                getter)
+                                                   properties,
+                                                   getter)
         else:
             logging.debug(f'empty tag list')
             return None

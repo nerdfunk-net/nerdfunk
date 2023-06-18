@@ -35,7 +35,6 @@ class Device:
         self._todos = {}
         self._use_defaults = False
         self._return_device = True
-        self._bulk = False
 
         # device properties
         self._device_name = None
@@ -46,7 +45,6 @@ class Device:
         # dict of all interfaces of the device
         self._interfaces = {}
         self._interface_defaults = {}
-        self._bulk_insert_operation = []
 
         # tags
         self._device_tags = []
@@ -68,7 +66,6 @@ class Device:
             self._device_ip = device_or_ip
         else:
             self._device_name = device_or_ip
-        self._bulk_insert_operation = []
 
     # -----===== internals =====-----
 
@@ -85,9 +82,9 @@ class Device:
             logging.debug("getting device from sot")
             self.open_nautobot()
             if self._device_name is not None:
-                self._device_obj = self._sot.central.get_entity(self._nautobot.dcim.devices, 
-                                                  "Device", 
-                                                  {'name': self._device_name})
+                self._device_obj = self._sot.central.get_entity(self._nautobot.dcim.devices,
+                                                                "Device",
+                                                                {'name': self._device_name})
             elif self._device_ip is not None:
                 logging.debug(f'sending query to get device using IP {self._device_ip}')
                 self._device_obj = self._sot.get.device(ip=self._device_ip)
@@ -132,23 +129,10 @@ class Device:
 
     # -----===== user commands =====-----
 
-    def set_interface_defaults(self, defaults):
-        logging.debug("-- entering sot/device.py/set_interface_defaults")
-        logging.debug(f'setting interface defaults to {defaults}')
-        self._interface_defaults = defaults
-        return self
-
     def get(self):
         logging.debug("-- entering sot/device.py/get")
-        if self._last_request == "interface":
-            interface = self._last_requested_interface
-            if interface is None:
-                logging.error(f'no interface specified and get called')
-                return None
-            return self._get_interface(interface)
-        else:
-            logging.debug(f'returning obj of device {self._device_name}')
-            return self._get_device_from_nautobot()
+        logging.debug(f'returning obj of device {self._device_name}')
+        return self._get_device_from_nautobot()
 
     def get_all_interfaces(self):
         logging.debug("-- entering sot/device.py/get_all_interfaces")
@@ -158,82 +142,18 @@ class Device:
     def add(self, *unnamed, **named):
         logging.debug("-- entering sot/device.py/add")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
-
-        if self._last_request == "interface":
-            interface = self._last_requested_interface
-            self._last_requested_interface = None
-            self._last_request = None
-            if interface is not None and interface not in self._interfaces:
-                self._interfaces[interface] = interfaces.Interface(
-                    interface,
-                    self._sot,
-                    self._get_device_from_nautobot())
-            if self._bulk:
-                iface_props = self._interfaces[interface] \
-                    .use_defaults(self._use_defaults) \
-                    .get_properties(properties)
-                self._bulk_insert_operation.append(iface_props)
-                return True
-            else:
-                # add interface now
-                return self._interfaces[interface] \
-                    .use_defaults(self._use_defaults) \
-                    .add(properties)
-        else:
-            return self.add_device(properties)
-
-    def add_range(self, first_interface, last_interface):
-        logging.debug("-- entering sot/device.py/add_range")
-        logging.debug(f'adding interface {first_interface} to {last_interface}')
-
-        prefix = first_interface[:first_interface.rfind('/')]
-        start = int(first_interface.split('/')[-1])
-        for i in range(start, last_interface + 1):
-            interface = "%s/%s" % (prefix, i)
-            if interface is not None and interface not in self._interfaces:
-                self._interfaces[interface] = interfaces.Interface(
-                    interface,
-                    self._sot,
-                    self._get_device_from_nautobot())
-                self._interfaces[interface] \
-                    .use_defaults(self._use_defaults) \
-                    .add(self._interface_defaults)
+        return self.add_device(properties)
 
     def update(self, *unnamed, **named):
         logging.debug("-- entering sot/device.py/update")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
-        if self._last_request == "interface":
-            interface = self._last_requested_interface
-            self._last_requested_interface = None
-            self._last_request = None
-            if interface is not None and interface not in self._interfaces:
-                self._interfaces[interface] = interfaces.Interface(
-                    interface,
-                    self._sot,
-                    self._get_device_from_nautobot())
-                return self._interfaces[interface] \
-                    .use_defaults(self._use_defaults) \
-                    .update(properties)
-        else:
-            logging.debug(f'update device: {properties}')
-            if 'name' not in properties:
+        if 'name' not in properties:
                 properties['name'] = self._device_name
-            return self.update_device(properties)
+        return self.update_device(properties)
 
     def delete(self):
         logging.debug("-- entering sot/device.py/delete")
-        if self._last_request == "interface":
-            interface = self._last_requested_interface
-            self._last_requested_interface = None
-            self._last_request = None
-            # todo
-        elif self._last_request == "tags":
-            self._last_request = None
-            for tag in self._last_requested_tags:
-                self._tags_to_delete.add(tag)
-            return self.delete_device_tags()
-        else:
-            return self.delete_device()
+        return self.delete_device()
 
     def set_tags(self, tags):
         # set tags overwrites existing tags
@@ -249,58 +169,22 @@ class Device:
 
     def modify_tags(self, new_tags, set_tag=False, remove_tags=False):
         logging.debug("-- entering sot/device.py/add_tags")
-        if self._last_request == "interface":
-            logging.debug(f'setting tags {new_tags} on interface {self._last_requested_interface}')
-            if self._last_requested_interface is not None and self._last_requested_interface not in self._interfaces:
-                logging.debug(f'adding interface {self._last_requested_interface} to list of interfaces')
-                self._interfaces[self._last_requested_interface] = interfaces.Interface(
-                    self._last_requested_interface,
-                    self._sot,
-                    self._get_device_from_nautobot())
-            tags = set()
-            if isinstance(new_tags, str):
-                tags.add(new_tags)
-            elif isinstance(new_tags, list):
-                for tag in new_tags:
-                    tags.add(tag)
-            if set_tag:
-                return self._interfaces[self._last_requested_interface].set_tags(tags)
-            elif remove_tags:
-                return self._interfaces[self._last_requested_interface].delete_tags(tags)
-            else:
-                return self._interfaces[self._last_requested_interface].add_tags(tags)
+        logging.debug(f'adding tags {new_tags} on device {self._device_name}')
+        tags = set()
+        if isinstance(new_tags, str):
+            tags.add(new_tags)
+        elif isinstance(new_tags, list):
+            for tag in new_tags:
+                tags.add(tag)
         else:
-            logging.debug(f'adding tags {new_tags} on device {self._device_name}')
-            tags = set()
-            if isinstance(new_tags, str):
-                tags.add(new_tags)
-            elif isinstance(new_tags, list):
-                for tag in new_tags:
-                    tags.add(tag)
-            else:
-                logging.error(f'please add tags as string or list of strings')
-                return None
-            if set_tag:
-                return self.set_device_tags(tags)
-            elif remove_tags:
-                return self.delete_device_tags(tags)
-            else:
-                return self.add_device_tags(tags)    
-
-    def add_or_update(self, update_configured):
-        logging.debug("-- entering sot/device.py/add_or_update")
-        self.open_nautobot()
-        add_device = True
-        update_device = False
-        if self._get_device_from_nautobot():
-            add_device = False
-            logging.info(f'device {self._device_name} found in SOT!')
-            if update_configured:
-                logging.info(f'updating is set to true; updating device')
-                update_device = True
-            else:
-                logging.info(f'update disabled; skipping device')
-        return add_device, update_device
+            logging.error(f'please add tags as string or list of strings')
+            return None
+        if set_tag:
+            return self.set_device_tags(tags)
+        elif remove_tags:
+            return self.delete_device_tags(tags)
+        else:
+            return self.add_device_tags(tags)    
 
     def set_config_context(self, config_context):
         logging.debug("-- entering sot/device.py/set_config_context")
@@ -349,24 +233,15 @@ class Device:
             else:
                 logging.error(f'connection could not created successfully')
 
-    def commit(self):
-        logging.debug('-- entering device.py/commit')
+    def add_list_of_interfaces(self, list_of_interfaces):
+        logging.debug('-- entering device.py/add_list_of_interfaces')
         self.open_nautobot()
 
-        if len(self._bulk_insert_operation) > 0:
-            logging.debug(f'adding {len(self._bulk_insert_operation)} interface(s)')
-            try:
-                nb_interface = self._nautobot.dcim.interfaces.create(self._bulk_insert_operation)
-                self._bulk_insert_operation = []
-            except Exception as exc:
-                # exc_type, exc_obj, exc_tb = sys.exc_info()
-                # message = "error got exception in line %s: %s (%s, %s, %s)" % (exc_tb.tb_lineno,
-                #                                                                exc, exc_type,
-                #                                                                exc_obj,
-                #                                                                exc_tb)
-                logging.error(f'could not add entity; got exception {exc}')
-                logging.error("%s" % json.dumps(self._bulk_insert_operation, indent=4))
-                return None
+        try:
+            nb_interface = self._nautobot.dcim.interfaces.create(list_of_interfaces)
+        except Exception as exc:
+            logging.error(f'could not add interfaces; got exception {exc}')
+            return None
 
     # -----===== attributes =====-----
 
@@ -409,28 +284,10 @@ class Device:
     def interface(self, interface_name):
         logging.debug('-- entering device.py/interface')
         logging.debug(f'setting _last_requested_interface to {interface_name}')
-        self._last_request = "interface"
-        self._last_requested_interface = interface_name
-        return self
-
-    def tag(self, tag):
-        logging.debug('-- entering device.py/tag')
-        logging.debug(f'adding {tag} to list of_last_requested_tags')
-        self._last_request = "tags"
-        if self._last_requested_tags is None:
-            self._last_requested_tags = set()
-        self._last_requested_tags.add(tag)
-        return self
-
-    def tags(self, tags):
-        logging.debug('-- entering device.py/tags')
-        logging.debug(f'setting _last_requested_tags to {tags}')
-        self._last_request = "tags"
-        if self._last_requested_tags is None:
-            self._last_requested_tags = set()
-        for tag in tags:
-            self._last_requested_tags.add(tag)
-        return self
+        return interfaces.Interface(
+                    interface_name,
+                    self._sot,
+                    self._get_device_from_nautobot())
 
     def return_device(self, return_device):
         logging.debug('-- entering device.py/return_device')
@@ -438,12 +295,6 @@ class Device:
         # is already part of sot
         logging.debug(f'setting _return_device to {return_device}')
         self._return_device = return_device
-        return self
-
-    def bulk(self, bulk):
-        logging.debug('-- entering device.py/bulk')
-        logging.debug(f'setting bulk to {bulk}')
-        self._bulk = bulk
         return self
 
     # -----===== Device Management =====-----
@@ -558,68 +409,6 @@ class Device:
 
         return self._sot.central.delete_entity(self._nautobot.dcim.devices, "Device", {'name': self._device_name}, {'name': self._device_name})
 
-    def set_device_tags(self, new_tags):
-        self.add_device_tags(new_tags, True)
-
-    def add_device_tags(self, new_tags, set_tag=False):
-        logging.debug('-- entering device.py/add_device_tags')
-        self.open_nautobot()
-        final_list = []
-
-        if not set_tag:
-            # if the device already exists there may also be tags
-            device = self._get_device_from_nautobot(refresh=True)
-            if device is None:
-                logging.error(f'unknown device {self._device_name}')
-                return None
-
-            for tag in device.tags:
-                new_tags.add(tag.name)
-
-            logging.debug(f'current tags: {device.tags}')
-            logging.debug(f'updating tags to {new_tags}')
-
-        # check if new tag is known; add id to final list
-        for new_tag in new_tags:
-            tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
-            if tag is None:
-                logging.error(f'unknown tag {new_tag}')
-            else:
-                final_list.append(tag.id)
-
-        if len(final_list) > 0:
-            properties = {'tags': list(final_list)}
-            logging.debug(f'final list of tags {properties}')
-            return self._sot.central.update_entity(self._nautobot.dcim.devices,
-                                                   properties,
-                                                   {'name': self._device_name})
-
-    def delete_device_tags(self):
-        logging.debug('-- entering device.py/delete_tags')
-        self.open_nautobot()
-        logging.debug(f'deleting tags {self._tags_to_delete} from sot')
-
-        new_device_tags = self._tags_to_delete
-
-        # the device must exist; get tags
-        device = self._get_device_from_nautobot()
-        if device is None:
-            logging.error(f'unknown device {self._device_name}')
-            return None
-
-        for tag in device.tags:
-            if tag in new_device_tags:
-                new_device_tags.remove(tag)
-
-        logging.debug(f'current tags: {device.tags}')
-        logging.debug(f'new tags {new_device_tags}')
-
-        properties = {'tags': list(new_device_tags)}
-        # todo hier noch einmal schauen und testen
-        return self._sot.central.update_entity(self._nautobot.extras.tags,
-                                     properties,
-                                     {'name': self._device_name})
-
     def set_customfield(self, *unnamed, **named):
         logging.debug('-- entering device.py/set_customfield')
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
@@ -640,6 +429,3 @@ class Device:
             return self._sot.central.update_entity(self._nautobot.dcim.devices,
                                                {'custom_fields': properties},
                                                {'name': self._device_name})
-
-
-
