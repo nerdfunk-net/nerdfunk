@@ -84,6 +84,13 @@ class Ipam(object):
                 elif isinstance(param, str):
                     # it is just a text like log('something to log')
                     return param
+                elif isinstance(param, tuple):
+                    for tup in param:
+                        if isinstance(tup, dict):
+                            for key,value in tup.items():
+                                properties[key] = value
+                elif isinstance(param, list):
+                    return param
                 else:
                     logging.error(f'cannot use paramater {param} / {type(param)} as value')
         for key,value in named.items():

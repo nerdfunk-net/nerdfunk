@@ -51,6 +51,13 @@ class Getter(object):
                 elif isinstance(param, str):
                     # it is just a text like log('something to log')
                     return param
+                elif isinstance(param, tuple):
+                    for tup in param:
+                        if isinstance(tup, dict):
+                            for key,value in tup.items():
+                                properties[key] = value
+                elif isinstance(param, list):
+                    return param
                 else:
                     logging.error(f'cannot use paramater {param} / {type(param)} as value')
         for key,value in named.items():
@@ -170,7 +177,7 @@ class Getter(object):
             return device
 
     def devices(self, *unnamed, **named):
-        logging.debug("-- entering getter.py/device")
+        logging.debug("-- entering getter.py/devices")
 
         properties = self.__convert_arguments_to_properties(*unnamed, **named)
 
@@ -197,9 +204,9 @@ class Getter(object):
             if device:
                 hostname = device.get('hostname')
                 devices[hostname] = {'primary_ip': device.get('primary_ip4'),
-                                    'device_type': device.get('device_type'),
-                                    'device_role': device.get('device_role'),
-                                    'platform': device.get('platform')}
+                                     'device_type': device.get('device_type'),
+                                     'device_role': device.get('device_role'),
+                                     'platform': device.get('platform')}
 
         return devices
 

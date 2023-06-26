@@ -15,6 +15,7 @@ class Importer(object):
         self._endpoints = {'sites': self._nautobot.dcim.sites,
                            'manufacturers': self._nautobot.dcim.manufacturers,
                            'platforms': self._nautobot.dcim.platforms,
+                           'devices': cls._nautobot.dcim.devices,
                            'device_roles': self._nautobot.dcim.device_roles,
                            'prefixes': self._nautobot.ipam.prefixes,
                            'location_types': self._nautobot.dcim.location_types,
@@ -49,6 +50,13 @@ class Importer(object):
                         properties[key] = value
                 elif isinstance(param, str):
                     # it is just a text like log('something to log')
+                    return param
+                elif isinstance(param, tuple):
+                    for tup in param:
+                        if isinstance(tup, dict):
+                            for key,value in tup.items():
+                                properties[key] = value
+                elif isinstance(param, list):
                     return param
                 else:
                     logging.error(f'cannot use paramater {param} / {type(param)} as value')

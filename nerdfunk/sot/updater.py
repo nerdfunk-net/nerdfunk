@@ -12,6 +12,7 @@ class Updater(object):
         cls._endpoints = {'sites': cls._nautobot.dcim.sites,
                           'manufacturers': cls._nautobot.dcim.manufacturers,
                           'platforms': cls._nautobot.dcim.platforms,
+                          'devices': cls._nautobot.dcim.devices,
                           'device_roles': cls._nautobot.dcim.device_roles,
                           'prefixes': cls._nautobot.ipam.prefixes,
                           'location_types': cls._nautobot.dcim.location_types,
@@ -43,6 +44,13 @@ class Updater(object):
                 elif isinstance(param, str):
                     # it is just a text like log('something to log')
                     return param
+                elif isinstance(param, tuple):
+                    for tup in param:
+                        if isinstance(tup, dict):
+                            for key,value in tup.items():
+                                properties[key] = value
+                elif isinstance(param, list):
+                    return param
                 else:
                     logging.error(f'cannot use paramater {param} / {type(param)} as value')
         for key,value in named.items():
@@ -65,4 +73,13 @@ class Updater(object):
             return None
         endpoint = self._endpoints.get(endpoint_name)
         return self._sot.central.update_entity(endpoint, values, getter)
+
+    def update_by_id(self, *unnamed, **named):
+        logging.debug("-- entering sot/updater.py/update_by_id")
+        properties = self.__convert_arguments_to_properties(*unnamed, **named)
+        self.open_nautobot()
+        id = properties.get('id')
+        del properties['id']
+        d = self._nautobot.dcim.devices.update(id=id, data=properties)
+        print(d)
 
