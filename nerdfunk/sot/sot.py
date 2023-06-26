@@ -12,6 +12,7 @@ from . import messenger
 from . import analyzer
 from . import configparser
 from . import updater
+from . import rest
 from ..utilities import misc
 from dotenv import load_dotenv, dotenv_values
 
@@ -33,6 +34,7 @@ class Sot:
         self.__analyzer = None
         self.__configparser = None
         self.__updater = None
+        self.__rest = None
         self._sot_config = None
         self._logs = []
         self._per_device = {}
@@ -97,6 +99,9 @@ class Sot:
 
     def configparser(self, *unnamed, **named):
         return configparser.Configparser(self, *unnamed, **named)
+
+    def rest(self, *unnamed, **named):
+        return rest.Rest(self, *unnamed, **named)
 
     def auth(self, **named):
         parameter = dict(named)
