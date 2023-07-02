@@ -15,7 +15,7 @@ class Importer(object):
         self._endpoints = {'sites': self._nautobot.dcim.sites,
                            'manufacturers': self._nautobot.dcim.manufacturers,
                            'platforms': self._nautobot.dcim.platforms,
-                           'devices': cls._nautobot.dcim.devices,
+                           'devices': self._nautobot.dcim.devices,
                            'device_roles': self._nautobot.dcim.device_roles,
                            'prefixes': self._nautobot.ipam.prefixes,
                            'location_types': self._nautobot.dcim.location_types,
