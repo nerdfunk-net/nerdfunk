@@ -1,12 +1,11 @@
 import logging
 import base64
+import os
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 class Auth(object):
-
-    _iterations = 390000
 
     def __init__(self, sot, **named):
         logging.debug(f'Creating AUTH object;')
@@ -19,6 +18,8 @@ class Auth(object):
             self._salt_bytes = str.encode(named['salt'])
         if 'iterations' in named and named['iterations'] is not None:
             self._iterations = named['iterations']
+        else:
+            self._iterations = 400000
         # logging.debug(f'salt: {self._salt_bytes} encryption_key: {self._encryption_key_ascii} iterations: {self._iterations}')
 
     def set_salt(self, salt):
