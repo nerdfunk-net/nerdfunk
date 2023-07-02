@@ -164,15 +164,15 @@ class Device:
 
     def set_tags(self, tags):
         # set tags overwrites existing tags
-        return self.modify_tags(tags, True, False)
+        return self.modify_tags(tags, set_tag=True, remove_tags=False)
 
     def add_tags(self, tags):
         # add tag to existing ones
-        return self.modify_tags(tags, False, False)
+        return self.modify_tags(tags, set_tag=False, remove_tags=False)
 
     def delete_tags(self, tags):
         # remove tags
-        return self.modify_tags(tags, False, True)
+        return self.modify_tags(tags, set_tag=False, remove_tags=True)
 
     def modify_tags(self, new_tags, set_tag=False, remove_tags=False):
         logging.debug("-- entering sot/device.py/add_tags")
@@ -434,5 +434,67 @@ class Device:
         else:
             logging.debug(f'setting custom field {properties} on device {self._device_name}')
             return self._sot.central.update_entity(self._nautobot.dcim.devices,
-                                               {'custom_fields': properties},
+                                                   {'custom_fields': properties},
+                                                   {'name': self._device_name})
+
+    def set_device_tags(self, new_tags):
+        self.add_device_tags(new_tags, True)
+
+    def add_device_tags(self, new_tags, set_tag=False):
+        logging.debug('-- entering device.py/add_device_tags')
+        self.open_nautobot()
+        final_list = []
+
+        if not set_tag:
+            # if the device already exists there may also be tags
+            device = self._get_device_from_nautobot(refresh=True)
+            if device is None:
+                logging.error(f'unknown device {self._device_name}')
+                return None
+
+            for tag in device.tags:
+                new_tags.add(tag.name)
+
+            logging.debug(f'current tags: {device.tags}')
+            logging.debug(f'updating tags to {new_tags}')
+
+        # check if new tag is known; add id to final list
+        for new_tag in new_tags:
+            tag = self._sot.central.get_entity(self._nautobot.extras.tags, "Tag", {'name': new_tag})
+            if tag is None:
+                logging.error(f'unknown tag {new_tag}')
+            else:
+                final_list.append(tag.id)
+
+        if len(final_list) > 0:
+            properties = {'tags': list(final_list)}
+            logging.debug(f'final list of tags {properties}')
+            return self._sot.central.update_entity(self._nautobot.dcim.devices,
+                                                   properties,
+                                                   {'name': self._device_name})
+
+    def delete_device_tags(self):
+        logging.debug('-- entering device.py/delete_tags')
+        self.open_nautobot()
+        logging.debug(f'deleting tags {self._tags_to_delete} from sot')
+
+        new_device_tags = self._tags_to_delete
+
+        # the device must exist; get tags
+        device = self._get_device_from_nautobot()
+        if device is None:
+            logging.error(f'unknown device {self._device_name}')
+            return None
+
+        for tag in device.tags:
+            if tag in new_device_tags:
+                new_device_tags.remove(tag)
+
+        logging.debug(f'current tags: {device.tags}')
+        logging.debug(f'new tags {new_device_tags}')
+
+        properties = {'tags': list(new_device_tags)}
+        # todo hier noch einmal schauen und testen
+        return self._sot.central.update_entity(self._nautobot.extras.tags,
+                                               properties,
                                                {'name': self._device_name})
