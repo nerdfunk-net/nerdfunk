@@ -60,7 +60,8 @@ def decrypt_password(password):
     # prepare encryption key, we need it as bytes
     encryption_key_ascii = os.getenv('ENCRYPTIONKEY')
     encryption_key_bytes = str.encode(encryption_key_ascii)
-
+    iterations = int(os.getenv('ITERATIONS'))
+    # logging.debug(f'salt: {salt_ascii} encryption_key: {encryption_key_ascii} iterations: {iterations}')
     # get password as base64 and convert it to bytes
     password_bytes = base64.b64decode(password)
 
@@ -69,7 +70,7 @@ def decrypt_password(password):
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt_bytes,
-        iterations=390000,
+        iterations=iterations,
     )
     key = base64.urlsafe_b64encode(kdf.derive(encryption_key_bytes))
 
@@ -78,6 +79,7 @@ def decrypt_password(password):
     try:
         return f.decrypt(password_bytes).decode("utf-8")
     except:
+        logging.error(f'could not decrypt password')
         return None
 
 
