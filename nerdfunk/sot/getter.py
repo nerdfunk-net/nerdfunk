@@ -328,6 +328,7 @@ class Getter(object):
                     return tag.id
                 else:
                     logging.error(f'unknown tag {slug}')
+                    return None
             except Exception as exc:
                 logging.error(f'got exception {exc}')
                 return None

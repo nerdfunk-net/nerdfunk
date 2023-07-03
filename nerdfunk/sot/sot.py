@@ -13,6 +13,7 @@ from . import analyzer
 from . import configparser
 from . import updater
 from . import rest
+from . import repository
 from ..utilities import misc
 from dotenv import load_dotenv, dotenv_values
 
@@ -34,7 +35,6 @@ class Sot:
         self.__analyzer = None
         self.__configparser = None
         self.__updater = None
-        self.__rest = None
         self._sot_config = None
         self._logs = []
         self._per_device = {}
@@ -103,44 +103,53 @@ class Sot:
     def rest(self, *unnamed, **named):
         return rest.Rest(self, *unnamed, **named)
 
-    def auth(self, **named):
-        parameter = dict(named)
-        # Get the path to the directory this file is in
-        BASEDIR = os.path.abspath(os.path.dirname(__file__))
-        # Connect the path with the '.env' file name
-        load_dotenv(os.path.join(self.BASEDIR, '.env'))
+    def repository(self, **named):
+        return repository.Repository(**named)
 
-        salt = named.get('salt')
-        if salt is None:
-            logging.debug(f'using default salt from .env')
-            parameter['salt'] = os.getenv('SALT')
+    # def auth(self, **named):
+    #     parameter = dict(named)
+    #     # Get the path to the directory this file is in
+    #     BASEDIR = os.path.abspath(os.path.dirname(__file__))
+    #     # Connect the path with the '.env' file name
+    #     load_dotenv(os.path.join(self.BASEDIR, '.env'))
 
-        encryption_key = named.get('encryption_key')
-        if encryption_key is None:
-            logging.debug(f'using default encryption_key from .env')
-            parameter['encryption_key'] = os.getenv('ENCRYPTIONKEY')
+    #     salt = named.get('salt')
+    #     if salt is None:
+    #         logging.debug(f'using default salt from .env')
+    #         parameter['salt'] = os.getenv('SALT')
 
-        iterations = named.get('iterations')
-        if iterations is None:
-            logging.debug(f'using default iterations from .env')
-            parameter['iterations'] = int(os.getenv('ITERATIONS'))
+    #     encryption_key = named.get('encryption_key')
+    #     if encryption_key is None:
+    #         logging.debug(f'using default encryption_key from .env')
+    #         parameter['encryption_key'] = os.getenv('ENCRYPTIONKEY')
 
-        logging.debug(f'salt: {salt} encryption_key: {encryption_key}')
-        if self.__auth is None:
-            self.__auth = auth.Auth(self, **parameter)
-        return self.__auth
+    #     iterations = named.get('iterations')
+    #     if iterations is None:
+    #         logging.debug(f'using default iterations from .env')
+    #         parameter['iterations'] = int(os.getenv('ITERATIONS'))
+
+    #     logging.debug(f'salt: {salt} encryption_key: {encryption_key}')
+    #     if self.__auth is None:
+    #         self.__auth = auth.Auth(self, **parameter)
+    #     return self.__auth
 
     def __convert_arguments_to_properties(self, *unnamed, **named):
         """ converts unnamed (dict) and named arguments to a single property dict """
         properties = {}
         if len(unnamed) > 0:
             for param in unnamed:
-                print(param)
                 if isinstance(param, dict):
                     for key,value in param.items():
                         properties[key] = value
                 elif isinstance(param, str):
                     # it is just a text like log('something to log')
+                    return param
+                elif isinstance(param, tuple):
+                    for tup in param:
+                        if isinstance(tup, dict):
+                            for key,value in tup.items():
+                                properties[key] = value
+                elif isinstance(param, list):
                     return param
                 else:
                     logging.error(f'cannot use paramater {param} / {type(param)} as value')
