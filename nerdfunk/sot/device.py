@@ -198,11 +198,6 @@ class Device:
         logging.debug(f'writing config context of {self._device_name}')
         return git.edit_file(self._sot.get_config(), config_context)
 
-    def write_backup(self, config_context):
-        logging.debug("-- entering sot/device.py/write_backup")
-        logging.debug(f'writing config backup {self._device_name}')
-        return git.edit_file(self._sot.get_config(), config_context)
-
     def connection_to(self, *unnamed, **named):
         logging.debug("-- entering sot/device.py/connection_to")
         properties = self.__convert_arguments_to_properties(*unnamed, **named)

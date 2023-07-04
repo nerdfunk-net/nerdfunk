@@ -106,33 +106,6 @@ class Sot:
     def repository(self, **named):
         return repository.Repository(**named)
 
-    # def auth(self, **named):
-    #     parameter = dict(named)
-    #     # Get the path to the directory this file is in
-    #     BASEDIR = os.path.abspath(os.path.dirname(__file__))
-    #     # Connect the path with the '.env' file name
-    #     load_dotenv(os.path.join(self.BASEDIR, '.env'))
-
-    #     salt = named.get('salt')
-    #     if salt is None:
-    #         logging.debug(f'using default salt from .env')
-    #         parameter['salt'] = os.getenv('SALT')
-
-    #     encryption_key = named.get('encryption_key')
-    #     if encryption_key is None:
-    #         logging.debug(f'using default encryption_key from .env')
-    #         parameter['encryption_key'] = os.getenv('ENCRYPTIONKEY')
-
-    #     iterations = named.get('iterations')
-    #     if iterations is None:
-    #         logging.debug(f'using default iterations from .env')
-    #         parameter['iterations'] = int(os.getenv('ITERATIONS'))
-
-    #     logging.debug(f'salt: {salt} encryption_key: {encryption_key}')
-    #     if self.__auth is None:
-    #         self.__auth = auth.Auth(self, **parameter)
-    #     return self.__auth
-
     def __convert_arguments_to_properties(self, *unnamed, **named):
         """ converts unnamed (dict) and named arguments to a single property dict """
         properties = {}

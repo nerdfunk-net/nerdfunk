@@ -131,14 +131,6 @@ class Getter(object):
                 self._cache['site'][site_name] = {}
             self._cache['site'][site_name] = site_id
 
-    def file(self, *unnamed, **named):
-        logging.debug(f'-- entering getter.py/file')
-        properties = dict(named)
-        if unnamed:
-            properties.update(unnamed[0])
-
-        return git.get_file(self._sot.get_config(), properties)
-
     def device(self, *unnamed, **named):
         logging.debug("-- entering getter.py/device")
         self.open_nautobot()
