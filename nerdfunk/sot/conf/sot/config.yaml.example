@@ -259,25 +259,14 @@ nautobot:
 
 git:
     # please configure your GIT here
-    sot_data:
-        username: your@email
-        token: "your_git_token"
-        repo: "https://github.com/your_repo/sot_data.git"
-        local_gitdir: "/path/to/sot_data"
-        local_content: "/"
     config_contexts:
-        username: your@email
-        token: "your_git_token"
-        repo: "https://github.com/your_repo/config_contexts.git"
-        local_gitdir: "/path/to/sot_data"
-        local_content: "config_contexts"
+        repo: sot_data
+        path: "/path/to/sot_data"
+        subdir: "config_contexts"
     config_backup:
-        username: your@email
-        token: "your_git_token"
-        repo: "https://github.com/your_repo/config_backup.git"
-        local_gitdir: "/path/to/sot_data"
-        local_content: "config_backups"
-
+        repo: sot_data
+        path: "/path/to/sot_data"
+        subdir: "config_contexts"
 phpipam:
   phpipam_url: http://127.0.0.1/
   phpipam_port: 80

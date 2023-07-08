@@ -2,7 +2,6 @@ import logging
 import requests
 import json
 from pynautobot import api
-from . import git
 
 
 class Getter(object):

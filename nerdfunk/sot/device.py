@@ -10,7 +10,6 @@ from pynautobot.models.dcim import Interfaces as PyInterfaces
 from pynautobot.models.ipam import IpAddresses
 from .. import devicemanagement as dm
 from . import central
-from . import git
 
 
 class Device:
@@ -196,7 +195,15 @@ class Device:
     def set_config_context(self, config_context):
         logging.debug("-- entering sot/device.py/set_config_context")
         logging.debug(f'writing config context of {self._device_name}')
-        return git.edit_file(self._sot.get_config(), config_context)
+
+        config = self._sot.get_config()
+        name_of_repo = config['git']['config_contexts']['repo']
+        path_to_repo = config['git']['config_contexts']['path']
+        subdir = config['git']['config_contexts']['subdir']
+        context_repo = sot.repository(repo=name_of_repo, path=path_to_repo)
+        filenane = "%s/%s.yaml" %(subdir, self._device_name)
+        # todo checken
+        return context_repo.write(filename, config_context)
 
     def connection_to(self, *unnamed, **named):
         logging.debug("-- entering sot/device.py/connection_to")
