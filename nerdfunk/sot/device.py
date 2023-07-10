@@ -63,6 +63,8 @@ class Device:
         if re.match(self._REGEX_IPV4, device_or_ip):
             logging.debug(f'{device_or_ip} is an IP address')
             self._device_ip = device_or_ip
+            # maybe we have no name; use IP instead
+            self._device_name = device_or_ip
         else:
             self._device_name = device_or_ip
 
